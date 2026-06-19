@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --rose: #E8445A;
+  --rose-light: #FF6B7A;
+  --blush: #FFF0F2;
+  --warm: #FDF6F0;
+  --earth: #3D2314;
+  --sand: #C49A72;
+  --sage: #7A9E7E;
+  --sage-l: rgba(122,158,126,0.12);
+  --night: #1A0F0A;
+  --cream: #FBF7F4;
+  --muted: #9A7060;
+  --border: rgba(196,154,114,0.2);
+  --err: #DC2626;
+  --err-l: #FEE2E2;
+  --ok: #16a34a;
+  --ok-l: #dcfce7;
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--earth); overflow-x: hidden; }
+
+.page { min-height: 100vh; padding-top: 68px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: var(--rose); color: white;
+  padding: 0.75rem 1.8rem; border-radius: 50px;
+  font-size: 0.95rem; font-weight: 600;
+  border: none; cursor: pointer;
+  transition: all 0.25s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  box-shadow: 0 6px 20px rgba(232,68,90,0.28);
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(232,68,90,0.4); background: var(--rose-light); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  background: transparent; color: var(--earth);
+  padding: 0.75rem 1.8rem; border-radius: 50px;
+  font-size: 0.95rem; font-weight: 500;
+  border: 2px solid var(--border); cursor: pointer;
+  transition: all 0.25s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-secondary:hover { border-color: var(--rose); color: var(--rose); }
+
+.btn-outline {
+  background: transparent; color: var(--earth);
+  padding: 0.65rem 1.4rem; border-radius: 50px;
+  font-size: 0.9rem; font-weight: 600;
+  border: 1.5px solid var(--border); cursor: pointer;
+  transition: all 0.2s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-outline:hover { border-color: var(--rose); color: var(--rose); }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.7rem; border-radius: 50px;
+  font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge-rose { background: var(--blush); color: var(--rose); }
+.badge-sage { background: rgba(122,158,126,0.12); color: var(--sage); }
+.badge-sand { background: rgba(196,154,114,0.15); color: var(--sand); }
+
+/* ── CARDS ── */
+.card {
+  background: white; border-radius: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.3s, box-shadow 0.3s;
+  overflow: hidden;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(61,35,20,0.1); }
+
+/* ── SECTION LABELS ── */
+.section-tag {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--blush); color: var(--rose);
+  font-size: 0.78rem; font-weight: 600;
+  padding: 0.35rem 0.9rem; border-radius: 50px;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 900; line-height: 1.15; color: var(--night);
+}
+.section-title em { color: var(--rose); font-style: italic; }
+
+/* ── FORM ── */
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group label { font-size: 0.85rem; font-weight: 600; color: var(--earth); }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 0.8rem 1rem; border-radius: 12px;
+  border: 1.5px solid var(--border); background: white;
+  font-size: 0.95rem; font-family: 'DM Sans', sans-serif;
+  color: var(--earth); outline: none; transition: border-color 0.2s;
+  width: 100%;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--rose); }
+.form-group input::placeholder { color: var(--muted); }
+
+/* ── MISC ── */
+.star { color: #FFB800; }
+.star-empty { color: #E0D0C8; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.5s ease both; }
+
+@media (max-width: 768px) {
+  .container { padding: 0 1.2rem; }
+  .page { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --rose: #E8445A;
+  --rose-light: #FF6B7A;
+  --blush: #FFF0F2;
+  --warm: #FDF6F0;
+  --earth: #3D2314;
+  --sand: #C49A72;
+  --sage: #7A9E7E;
+  --night: #1A0F0A;
+  --cream: #FBF7F4;
+  --muted: #9A7060;
+  --border: rgba(196,154,114,0.2);
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--earth); overflow-x: hidden; }
+
+.page { min-height: 100vh; padding-top: 72px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+.btn-primary {
+  background: var(--rose); color: white;
+  padding: 0.75rem 1.8rem; border-radius: 50px;
+  font-size: 0.95rem; font-weight: 600;
+  border: none; cursor: pointer;
+  transition: all 0.25s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  box-shadow: 0 6px 20px rgba(232,68,90,0.3);
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(232,68,90,0.4); background: var(--rose-light); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  background: transparent; color: var(--earth);
+  padding: 0.75rem 1.8rem; border-radius: 50px;
+  font-size: 0.95rem; font-weight: 500;
+  border: 2px solid var(--border); cursor: pointer;
+  transition: all 0.25s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-secondary:hover { border-color: var(--rose); color: var(--rose); }
+
