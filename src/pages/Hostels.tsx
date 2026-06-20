@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Search, CheckCircle, Wifi, Lock } from 'lucide-react'
 import { HOSTELS, CITIES } from '../data/seed'
+import { INDIAN_CITIES, WORLD_COUNTRIES } from '../lib/cities'
+import ComingSoonNotify from '../components/ComingSoonNotify'
 
 export default function Hostels() {
   const [search, setSearch] = useState('')
@@ -10,7 +12,12 @@ export default function Hostels() {
   const [availableOnly, setAvailableOnly] = useState(false)
   const [sortBy, setSortBy] = useState('rating')
 
-  const liveCities = ['All', ...CITIES.filter(c => c.status === 'live').map(c => c.name)]
+  const liveCities = CITIES.filter(c => c.status === 'live').map(c => c.name)
+  const comingSoonSeed = CITIES.filter(c => c.status === 'coming').map(c => c.name)
+  const moreIndianCities = useMemo(
+    () => INDIAN_CITIES.filter(c => !liveCities.includes(c) && !comingSoonSeed.includes(c)),
+    [] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   const filtered = HOSTELS
     .filter(h => {
@@ -45,8 +52,20 @@ export default function Hostels() {
               style={{ paddingLeft: '2.2rem', padding: '0.65rem 1rem 0.65rem 2.2rem', border: '1.5px solid var(--border)', borderRadius: 50, fontSize: '0.88rem', fontFamily: 'DM Sans,sans-serif', outline: 'none', width: '100%', color: 'var(--earth)' }} />
           </div>
           <select value={cityFilter} onChange={e => setCityFilter(e.target.value)}
-            style={{ padding: '0.65rem 1rem', border: '1.5px solid var(--border)', borderRadius: 50, fontSize: '0.88rem', fontFamily: 'DM Sans,sans-serif', color: 'var(--earth)', outline: 'none', cursor: 'pointer' }}>
-            {liveCities.map(c => <option key={c}>{c}</option>)}
+            style={{ padding: '0.65rem 1rem', border: '1.5px solid var(--border)', borderRadius: 50, fontSize: '0.88rem', fontFamily: 'DM Sans,sans-serif', color: 'var(--earth)', outline: 'none', cursor: 'pointer', maxWidth: 220 }}>
+            <option value="All">All cities</option>
+            <optgroup label="Available now">
+              {liveCities.map(c => <option key={c} value={c}>{c}</option>)}
+            </optgroup>
+            <optgroup label="Coming soon">
+              {comingSoonSeed.map(c => <option key={c} value={c}>{c}</option>)}
+            </optgroup>
+            <optgroup label="More cities in India">
+              {moreIndianCities.map(c => <option key={c} value={c}>{c}</option>)}
+            </optgroup>
+            <optgroup label="Worldwide">
+              {WORLD_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </optgroup>
           </select>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)}
             style={{ padding: '0.65rem 1rem', border: '1.5px solid var(--border)', borderRadius: 50, fontSize: '0.88rem', fontFamily: 'DM Sans,sans-serif', color: 'var(--earth)', outline: 'none', cursor: 'pointer' }}>
@@ -70,7 +89,9 @@ export default function Hostels() {
         <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
           Showing <strong style={{ color: 'var(--earth)' }}>{filtered.length}</strong> properties{cityFilter !== 'All' ? ` in ${cityFilter}` : ''}
         </p>
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && cityFilter !== 'All' && !liveCities.includes(cityFilter) ? (
+          <ComingSoonNotify place={cityFilter} />
+        ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem 0' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏠</div>
             <h3 style={{ fontFamily: 'Playfair Display,serif', marginBottom: '0.5rem' }}>No properties found</h3>
