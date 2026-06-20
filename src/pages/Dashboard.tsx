@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useLiveTrip } from '../hooks/useLiveTrip'
 import { supabase } from '../lib/supabase'
 import { GUIDES, HOSTELS } from '../data/seed'
-import { Search, BedDouble, AlertTriangle, LogOut, Calendar, Phone, Clock } from 'lucide-react'
+import { Search, BedDouble, AlertTriangle, LogOut, Calendar, Phone, Clock, Navigation, Share2, Square } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Booking {
@@ -16,6 +17,8 @@ interface Booking {
   amount: number
   hours: number | null
   notes: string | null
+  payment_method: string | null
+  payment_status: string
   created_at: string
 }
 
@@ -24,6 +27,8 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
+  const { tripId, tracking, start, stop } = useLiveTrip(user?.id)
+  const [activeBookingId, setActiveBookingId] = useState<string | null>(null)
 
   const displayName  = profile?.full_name || 'Traveller'
   const firstName    = displayName.split(' ')[0]
@@ -79,6 +84,32 @@ export default function Dashboard() {
     pending:   { bg: 'rgba(196,154,114,0.15)', color: 'var(--sand)' },
     cancelled: { bg: '#FEE2E2',                color: '#E87070' },
     completed: { bg: 'rgba(122,158,126,0.12)', color: 'var(--sage)' },
+  }
+
+  const handleStartTrip = async (bookingId: string) => {
+    const id = await start(bookingId)
+    if (id) {
+      setActiveBookingId(bookingId)
+      toast.success('Live location sharing started.')
+    }
+  }
+
+  const handleShareTrip = async () => {
+    if (!tripId) return
+    const url = `${window.location.origin}/track/${tripId}`
+    const text = `I'm sharing my live location on SafeShe so you can follow my trip: ${url}`
+    if (navigator.share) {
+      try { await navigator.share({ title: 'My live location', text, url }) } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url)
+      toast.success('Link copied — send it to your family.')
+    }
+  }
+
+  const handleEndTrip = async () => {
+    await stop()
+    setActiveBookingId(null)
+    toast.success('Live location sharing ended.')
   }
 
   const handleSignOut = async () => {
@@ -207,11 +238,30 @@ export default function Dashboard() {
                         {b.hours && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={11} /> {b.hours}hrs</span>}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexShrink: 0, flexWrap: 'wrap' }}>
                       <strong style={{ color: 'var(--rose)', fontSize: '0.95rem' }}>₹{b.amount.toLocaleString('en-IN')}</strong>
                       <span style={{ fontSize: '0.73rem', fontWeight: 600, color: st.color, background: st.bg, padding: '0.22rem 0.65rem', borderRadius: 20, textTransform: 'capitalize' }}>
                         {b.status}
                       </span>
+                      {b.payment_method === 'upi' && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--sage)', background: 'rgba(122,158,126,0.12)', padding: '0.2rem 0.6rem', borderRadius: 20 }}>
+                          UPI {b.payment_status === 'paid' ? 'paid' : 'pending'}
+                        </span>
+                      )}
+                      {b.status === 'confirmed' && activeBookingId === b.id && tracking ? (
+                        <>
+                          <button onClick={handleShareTrip} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'var(--blush)', border: 'none', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--rose)', fontFamily: 'DM Sans,sans-serif', fontWeight: 600 }}>
+                            <Share2 size={12} /> Share location
+                          </button>
+                          <button onClick={handleEndTrip} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--muted)', fontFamily: 'DM Sans,sans-serif' }}>
+                            <Square size={11} /> End trip
+                          </button>
+                        </>
+                      ) : b.status === 'confirmed' && !tracking ? (
+                        <button onClick={() => handleStartTrip(b.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(122,158,126,0.12)', border: 'none', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--sage)', fontFamily: 'DM Sans,sans-serif', fontWeight: 600 }}>
+                            <Navigation size={11} /> Start trip
+                          </button>
+                        ) : null}
                       {b.status === 'confirmed' && (
                         <button onClick={() => cancelBooking(b.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '0.25rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--muted)', fontFamily: 'DM Sans,sans-serif' }}>
                           Cancel

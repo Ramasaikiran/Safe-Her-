@@ -68,25 +68,57 @@ create policy "Anyone can view active guide profiles" on public.guide_profiles f
 create policy "Guides manage own profile" on public.guide_profiles for update using (auth.uid() = id);
 create policy "Guides insert own profile" on public.guide_profiles for insert with check (auth.uid() = id);
 
--- 3. Bookings
+-- 3. Bookings (columns match what the frontend actually writes/reads)
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade not null,
-  type text check (type in ('guide', 'hostel', 'guard')) not null,
-  reference_id text not null,
-  date date not null,
-  status text check (status in ('pending', 'confirmed', 'cancelled')) default 'confirmed',
-  total_amount integer not null,
+  traveller_id uuid references auth.users(id) on delete cascade not null,
+  type text not null check (type in ('guide', 'hostel')),
+  guide_id text,
+  hostel_id text,
+  city text,
+  booking_date date not null,
+  hours integer,
+  amount integer not null,
+  status text not null default 'confirmed' check (status in ('pending', 'confirmed', 'cancelled', 'completed')),
   notes text,
+  payment_method text check (payment_method in ('upi', 'cash')),
+  payment_status text not null default 'pending' check (payment_status in ('pending', 'paid')),
+  payment_ref text,
   created_at timestamp with time zone default now()
 );
 alter table public.bookings enable row level security;
 drop policy if exists "Users can view own bookings" on public.bookings;
 drop policy if exists "Users can insert own bookings" on public.bookings;
 drop policy if exists "Users can update own bookings" on public.bookings;
-create policy "Users can view own bookings" on public.bookings for select using (auth.uid() = user_id);
-create policy "Users can insert own bookings" on public.bookings for insert with check (auth.uid() = user_id);
-create policy "Users can update own bookings" on public.bookings for update using (auth.uid() = user_id);
+create policy "Users can view own bookings" on public.bookings for select using (auth.uid() = traveller_id);
+create policy "Users can insert own bookings" on public.bookings for insert with check (auth.uid() = traveller_id);
+create policy "Users can update own bookings" on public.bookings for update using (auth.uid() = traveller_id);
+
+-- 3b. Live trip location sharing — one row per active trip, latest
+-- position only. The link is the access control: id is an unguessable
+-- uuid, select is public so family members (no account) can open the
+-- share link and see it update.
+create table if not exists public.live_trips (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid references public.bookings(id) on delete set null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  status text not null default 'active' check (status in ('active', 'ended')),
+  latitude numeric,
+  longitude numeric,
+  accuracy_m numeric,
+  last_updated timestamp with time zone default now(),
+  started_at timestamp with time zone default now(),
+  ended_at timestamp with time zone
+);
+alter table public.live_trips enable row level security;
+drop policy if exists "Anyone with the link can view a trip" on public.live_trips;
+drop policy if exists "Users manage own trips" on public.live_trips;
+drop policy if exists "Users update own trips" on public.live_trips;
+create policy "Anyone with the link can view a trip" on public.live_trips for select using (true);
+create policy "Users manage own trips" on public.live_trips for insert with check (auth.uid() = user_id);
+create policy "Users update own trips" on public.live_trips for update using (auth.uid() = user_id);
+create index if not exists live_trips_user_id_idx on public.live_trips(user_id);
+create index if not exists live_trips_booking_id_idx on public.live_trips(booking_id);
 
 -- 4. Emergency contacts (for SOS)
 create table if not exists public.emergency_contacts (

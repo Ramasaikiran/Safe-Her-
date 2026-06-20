@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard'
 import BookGuide from './pages/BookGuide'
 import BookHostel from './pages/BookHostel'
 import SOS from './pages/SOS'
+import TrackTrip from './pages/TrackTrip'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
@@ -46,6 +47,7 @@ function AppRoutes() {
         <Route path="/book/hostel/:id" element={<ProtectedRoute><BookHostel /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/sos" element={<SOS />} />
+        <Route path="/track/:tripId" element={<TrackTrip />} />
       </Routes>
     </>
   )

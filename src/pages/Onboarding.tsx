@@ -2,8 +2,8 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import { INDIAN_CITIES } from '../lib/cities'
-import { Camera, Shield, Check } from 'lucide-react'
+import { ALL_DESTINATIONS } from '../lib/cities'
+import { Camera, Shield, Check, Search, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const INTERESTS = ['Solo travel', 'Backpacking', 'Heritage & culture', 'Beaches', 'Mountains & trekking', 'Food trails', 'Photography', 'Wellness retreats', 'Nightlife', 'Pilgrimage']
@@ -23,6 +23,7 @@ export default function Onboarding() {
 
   const [interests, setInterests] = useState<string[]>(profile?.travel_interests || [])
   const [destinations, setDestinations] = useState<string[]>(profile?.favorite_destinations || [])
+  const [destinationQuery, setDestinationQuery] = useState('')
   const [languages, setLanguages] = useState<string[]>(profile?.languages || [])
 
   const toggle = (list: string[], setList: (v: string[]) => void, item: string) => {
@@ -130,13 +131,36 @@ export default function Onboarding() {
 
             <div style={{ marginBottom: '1.4rem' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.6rem', display: 'block' }}>Favorite destinations</label>
-              <div className="chip-grid" style={{ maxHeight: 150, overflowY: 'auto' }}>
-                {INDIAN_CITIES.slice(0, 20).map(c => (
-                  <button key={c} type="button" className={`chip ${destinations.includes(c) ? 'selected' : ''}`} onClick={() => toggle(destinations, setDestinations, c)}>
-                    {c}
-                  </button>
-                ))}
+              <div style={{ position: 'relative', marginBottom: '0.7rem' }}>
+                <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                <input
+                  type="text"
+                  placeholder="Search any Indian city or country worldwide…"
+                  value={destinationQuery}
+                  onChange={e => setDestinationQuery(e.target.value)}
+                  style={{ paddingLeft: '2.4rem' }}
+                />
               </div>
+              {destinationQuery.trim() && (
+                <div className="chip-grid" style={{ maxHeight: 160, overflowY: 'auto', marginBottom: '0.8rem' }}>
+                  {ALL_DESTINATIONS.filter(d => d.toLowerCase().includes(destinationQuery.trim().toLowerCase()) && !destinations.includes(d))
+                    .slice(0, 12)
+                    .map(d => (
+                      <button key={d} type="button" className="chip" onClick={() => { toggle(destinations, setDestinations, d); setDestinationQuery('') }}>
+                        + {d}
+                      </button>
+                    ))}
+                </div>
+              )}
+              {destinations.length > 0 && (
+                <div className="chip-grid">
+                  {destinations.map(d => (
+                    <button key={d} type="button" className="chip selected" onClick={() => toggle(destinations, setDestinations, d)}>
+                      {d} <X size={11} style={{ marginLeft: 4, verticalAlign: -1 }} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: '1.8rem' }}>

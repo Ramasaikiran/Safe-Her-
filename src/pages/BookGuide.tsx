@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { GUIDES } from '../data/seed'
 import { MapPin, CheckCircle, ArrowLeft, Clock, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
+import PaymentStep, { type PaymentMethod } from '../components/PaymentStep'
 
 export default function BookGuide() {
   const { id } = useParams()
@@ -14,6 +15,8 @@ export default function BookGuide() {
 
   const [form, setForm] = useState({ date: '', hours: 2, notes: '' })
   const [loading, setLoading] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi')
+  const [upiConfirmed, setUpiConfirmed] = useState(false)
 
   if (!guide) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -30,15 +33,19 @@ export default function BookGuide() {
     e.preventDefault()
     if (!form.date) { toast.error('Please select a date'); return }
     if (!user) { toast.error('Please log in to book a guide.'); navigate('/login'); return }
+    if (paymentMethod === 'upi' && !upiConfirmed) { toast.error('Please confirm your UPI payment, or switch to cash.'); return }
     setLoading(true)
     const { error } = await supabase.from('bookings').insert({
       traveller_id: user.id,
       type: 'guide',
+      guide_id: guide.id,
       city: guide.city,
       booking_date: form.date,
       hours: form.hours,
       amount: total,
       notes: form.notes || null,
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === 'upi' ? 'paid' : 'pending',
     })
     setLoading(false)
     if (error) {
@@ -131,6 +138,16 @@ export default function BookGuide() {
                   rows={3} style={{ resize: 'vertical' }} />
               </div>
 
+              <PaymentStep
+                amount={total + Math.round(total * 0.1)}
+                note={`SafeShe guide booking — ${guide.name}`}
+                txnRef={`G-${guide.id}-${Date.now()}`}
+                method={paymentMethod}
+                onMethodChange={setPaymentMethod}
+                upiConfirmed={upiConfirmed}
+                onUpiConfirmedChange={setUpiConfirmed}
+              />
+
               {/* Summary */}
               <div style={{ background: 'var(--warm)', borderRadius: 12, padding: '1rem', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
@@ -151,7 +168,7 @@ export default function BookGuide() {
                 {loading ? 'Confirming Booking...' : 'Confirm Booking →'}
               </button>
               <p style={{ fontSize: '0.75rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-                Free cancellation up to 24 hours before. Secure payment via Razorpay.
+                Free cancellation up to 24 hours before.
               </p>
             </form>
           </div>

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { HOSTELS } from '../data/seed'
 import { MapPin, CheckCircle, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
+import PaymentStep, { type PaymentMethod } from '../components/PaymentStep'
 
 export default function BookHostel() {
   const { id } = useParams()
@@ -14,6 +15,8 @@ export default function BookHostel() {
 
   const [form, setForm] = useState({ checkIn: '', checkOut: '', notes: '' })
   const [loading, setLoading] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi')
+  const [upiConfirmed, setUpiConfirmed] = useState(false)
 
   if (!hostel) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -35,14 +38,18 @@ export default function BookHostel() {
     if (!form.checkIn || !form.checkOut) { toast.error('Please select check-in and check-out dates'); return }
     if (nights < 1) { toast.error('Check-out must be after check-in'); return }
     if (!user) { toast.error('Please log in to book a stay.'); navigate('/login'); return }
+    if (paymentMethod === 'upi' && !upiConfirmed) { toast.error('Please confirm your UPI payment, or switch to cash.'); return }
     setLoading(true)
     const { error } = await supabase.from('bookings').insert({
       traveller_id: user.id,
       type: 'hostel',
+      hostel_id: hostel.id,
       city: hostel.city,
       booking_date: form.checkIn,
       amount: total,
       notes: `Check-in: ${form.checkIn}, Check-out: ${form.checkOut}. ${form.notes}`.trim(),
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === 'upi' ? 'paid' : 'pending',
     })
     setLoading(false)
     if (error) { toast.error('Could not complete your booking. Please try again.'); return }
@@ -142,6 +149,16 @@ export default function BookHostel() {
                   placeholder="Early check-in, dietary needs, accessibility requirements..."
                   rows={3} style={{ resize: 'vertical' }} />
               </div>
+
+              <PaymentStep
+                amount={total}
+                note={`SafeShe stay — ${hostel.name}`}
+                txnRef={`H-${hostel.id}-${Date.now()}`}
+                method={paymentMethod}
+                onMethodChange={setPaymentMethod}
+                upiConfirmed={upiConfirmed}
+                onUpiConfirmedChange={setUpiConfirmed}
+              />
 
               {nights > 0 && (
                 <div style={{ background: 'var(--warm)', borderRadius: 12, padding: '1rem', border: '1px solid var(--border)' }}>
