@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { ALL_DESTINATIONS } from '../lib/cities'
 import { Camera, Shield, Check, Search, X } from 'lucide-react'
+import CountryStateSelect from '../components/CountryStateSelect'
 import toast from 'react-hot-toast'
 
 const INTERESTS = ['Solo travel', 'Backpacking', 'Heritage & culture', 'Beaches', 'Mountains & trekking', 'Food trails', 'Photography', 'Wellness retreats', 'Nightlife', 'Pilgrimage']
@@ -152,6 +153,13 @@ export default function Onboarding() {
                     ))}
                 </div>
               )}
+
+              <p style={{ fontSize: '0.78rem', color: 'var(--muted)', margin: '0.2rem 0 0.5rem' }}>
+                Or browse by country and state:
+              </p>
+              <CountryStateSelect onAdd={label => setDestinations(prev => prev.includes(label) ? prev : [...prev, label])} />
+              <div style={{ marginTop: '0.8rem' }} />
+
               {destinations.length > 0 && (
                 <div className="chip-grid">
                   {destinations.map(d => (
