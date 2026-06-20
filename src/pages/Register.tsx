@@ -45,7 +45,7 @@ export default function Register() {
     if (password !== confirmPassword) { toast.error('Passwords do not match.'); return }
 
     setLoading(true)
-    const { error } = await signupWithPassword(email, password)
+    const { error } = await signupWithPassword(email, password, fullName.trim(), phone)
     setLoading(false)
 
     if (error) {

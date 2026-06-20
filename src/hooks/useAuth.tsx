@@ -44,7 +44,7 @@ interface AuthContextType {
   profile: Profile | null
   loading: boolean
   loginWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signupWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signupWithPassword: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: AuthError | null }>
   verifySignupOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>
   completeRegistration: (data: {
     full_name: string
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * instead. Otherwise create the auth user with a password — Supabase
    * mails a 6-digit confirmation code automatically.
    */
-  const signupWithPassword = useCallback(async (emailRaw: string, password: string): Promise<{ error: AuthError | null }> => {
+  const signupWithPassword = useCallback(async (emailRaw: string, password: string, fullName: string, phone: string): Promise<{ error: AuthError | null }> => {
     const email = emailRaw.trim().toLowerCase()
     if (!isValidEmail(email)) {
       return { error: { code: 'INVALID_EMAIL', message: 'Enter a valid email address.' } }
@@ -215,7 +215,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const { error } = await supabase.auth.signUp({ email, password })
+      // full_name/phone are stashed in user_metadata so the profile can
+      // still be created correctly if the person confirms via the emailed
+      // link (a fresh page load) instead of typing the 6-digit code back
+      // into this form. emailRedirectTo is pinned explicitly so the link
+      // lands on THIS app's /auth/callback rather than whatever default
+      // "Site URL" happens to be set in the Supabase dashboard — that URL
+      // still needs to be allow-listed under Authentication > URL
+      // Configuration > Redirect URLs for Supabase to honor it.
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName, phone },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
       if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {
@@ -298,7 +313,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resendSignupOtp = useCallback(async (emailRaw: string) => {
     const email = emailRaw.trim().toLowerCase()
     try {
-      const { error } = await supabase.auth.resend({ type: 'signup', email })
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
       if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {

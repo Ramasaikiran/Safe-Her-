@@ -38,6 +38,7 @@ export default function AuthCallback() {
           id: session.user.id,
           email: session.user.email,
           full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'New traveller',
+          phone: session.user.user_metadata?.phone || null,
           avatar_url: session.user.user_metadata?.avatar_url || null,
         })
         if (error) {
