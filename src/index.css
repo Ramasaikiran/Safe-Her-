@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,1,500;9..144,0,600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -127,50 +128,130 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(
   .page { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
 
+/* ════════════════════════════════════════════════════════════
+   AUTH + ONBOARDING — "First Light" system
+   Signature: a three-stop gradient (blush → sand → sage) reading
+   as dawn breaking into a safe arrival. It anchors the auth hero
+   panel and doubles as the onboarding progress bar — the same
+   gradient quite literally "fills in" as a traveller moves
+   closer to being inside the community.
+   ════════════════════════════════════════════════════════════ */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --rose: #E8445A;
-  --rose-light: #FF6B7A;
-  --blush: #FFF0F2;
-  --warm: #FDF6F0;
-  --earth: #3D2314;
-  --sand: #C49A72;
-  --sage: #7A9E7E;
-  --night: #1A0F0A;
-  --cream: #FBF7F4;
-  --muted: #9A7060;
-  --border: rgba(196,154,114,0.2);
+  --dawn-gradient: linear-gradient(135deg, #FFD9DE 0%, #F2B98C 48%, #9DC2A0 100%);
+  --dawn-gradient-soft: linear-gradient(135deg, rgba(255,217,222,0.5) 0%, rgba(242,185,140,0.4) 48%, rgba(157,194,160,0.45) 100%);
+  --glass-bg: rgba(255,255,255,0.6);
+  --glass-border: rgba(255,255,255,0.8);
 }
 
-html { scroll-behavior: smooth; }
-body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--earth); overflow-x: hidden; }
-
-.page { min-height: 100vh; padding-top: 72px; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-
-.btn-primary {
-  background: var(--rose); color: white;
-  padding: 0.75rem 1.8rem; border-radius: 50px;
-  font-size: 0.95rem; font-weight: 600;
-  border: none; cursor: pointer;
-  transition: all 0.25s; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  box-shadow: 0 6px 20px rgba(232,68,90,0.3);
-  font-family: 'DM Sans', sans-serif;
+.auth-shell {
+  min-height: 100vh; display: grid; grid-template-columns: 1fr;
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(232,68,90,0.4); background: var(--rose-light); }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-.btn-secondary {
-  background: transparent; color: var(--earth);
-  padding: 0.75rem 1.8rem; border-radius: 50px;
-  font-size: 0.95rem; font-weight: 500;
-  border: 2px solid var(--border); cursor: pointer;
-  transition: all 0.25s; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  font-family: 'DM Sans', sans-serif;
+@media (min-width: 960px) {
+  .auth-shell { grid-template-columns: 1.05fr 1fr; }
 }
-.btn-secondary:hover { border-color: var(--rose); color: var(--rose); }
 
+.auth-hero {
+  position: relative; display: none; overflow: hidden;
+  background: var(--dawn-gradient);
+}
+@media (min-width: 960px) { .auth-hero { display: flex; flex-direction: column; justify-content: space-between; padding: 3rem; } }
+.auth-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 80%, rgba(255,255,255,0.35), transparent 55%);
+}
+.auth-hero-mark { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+.auth-hero-quote {
+  position: relative; font-family: 'Fraunces', serif; font-style: italic;
+  font-weight: 500; font-size: clamp(1.6rem, 2.6vw, 2.3rem); line-height: 1.3;
+  color: var(--night); max-width: 30ch;
+}
+.auth-hero-foot { position: relative; display: flex; gap: 1.6rem; font-size: 0.82rem; color: var(--night); opacity: 0.75; }
+
+.auth-panel {
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem; min-height: 100vh;
+  background: var(--cream);
+}
+
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px; padding: 2.4rem;
+  box-shadow: 0 24px 60px rgba(61,35,20,0.08);
+}
+
+/* horizon progress — used for OTP step indicator AND onboarding steps */
+.horizon-bar {
+  height: 4px; border-radius: 4px; background: rgba(196,154,114,0.18);
+  overflow: hidden; margin-bottom: 1.8rem;
+}
+.horizon-bar-fill {
+  height: 100%; border-radius: 4px; background: var(--dawn-gradient);
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+.auth-eyebrow {
+  font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+.auth-title {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 1.9rem); color: var(--night); line-height: 1.2;
+}
+.auth-sub { font-size: 0.92rem; color: var(--muted); line-height: 1.5; }
+
+.btn-google {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  background: white; color: var(--earth); font-weight: 600; font-size: 0.92rem;
+  padding: 0.78rem 1.4rem; border-radius: 14px; border: 1.5px solid var(--border);
+  cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+}
+.btn-google:hover { border-color: var(--sand); box-shadow: 0 4px 14px rgba(61,35,20,0.06); transform: translateY(-1px); }
+.btn-google:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.auth-divider { display: flex; align-items: center; gap: 0.8rem; margin: 1.4rem 0; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.auth-divider span { font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.auth-trust-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--sage); font-weight: 600; }
+
+/* ── Onboarding ── */
+.onboard-shell {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  background: var(--cream); padding: 2rem 1.5rem;
+}
+.onboard-card { width: 100%; max-width: 520px; }
+.onboard-steps { display: flex; gap: 0.4rem; margin-bottom: 2.2rem; }
+.onboard-step-dot { flex: 1; height: 4px; border-radius: 4px; background: rgba(196,154,114,0.18); overflow: hidden; }
+.onboard-step-dot.active .onboard-step-dot-fill { width: 100%; }
+.onboard-step-dot-fill { height: 100%; width: 0%; background: var(--dawn-gradient); transition: width 0.5s ease; }
+
+.avatar-upload {
+  width: 112px; height: 112px; border-radius: 50%; margin: 0 auto 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--blush); border: 2px dashed var(--sand); cursor: pointer;
+  overflow: hidden; position: relative; color: var(--rose);
+  transition: border-color 0.2s;
+}
+.avatar-upload:hover { border-color: var(--rose); }
+.avatar-upload img { width: 100%; height: 100%; object-fit: cover; }
+
+.chip-grid { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.chip {
+  padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600;
+  border: 1.5px solid var(--border); background: white; color: var(--earth);
+  cursor: pointer; transition: all 0.18s; user-select: none;
+}
+.chip:hover { border-color: var(--sand); }
+.chip.selected { background: var(--rose); border-color: var(--rose); color: white; }
+
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.scale-in { animation: scaleIn 0.4s cubic-bezier(.34,1.56,.64,1) both; }
+
+@media (max-width: 540px) {
+  .auth-card { padding: 1.8rem; border-radius: 20px; }
+}

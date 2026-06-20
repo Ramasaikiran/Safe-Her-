@@ -28,7 +28,7 @@ export default function Dashboard() {
   const displayName  = profile?.full_name || 'Traveller'
   const firstName    = displayName.split(' ')[0]
   const initials     = displayName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-  const phone        = profile?.phone ? profile.phone.replace('+91', '').trim() : ''
+  const phone        = profile?.phone || ''
   const joinedDate   = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     : ''
@@ -107,7 +107,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.2rem' }}>
                 {phone && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                    <Phone size={13} /> +91 {phone}
+                    <Phone size={13} /> {phone}
                   </span>
                 )}
                 {joinedDate && (

@@ -4,30 +4,36 @@ import type { User, Session } from '@supabase/supabase-js'
 import { supabase, type Profile, type UserRole } from '../lib/supabase'
 
 /**
- * SafeShe Auth — Phone + OTP only.
+ * SafeShe Auth — Email + OTP, with Google as a second option.
  *
  * Flow:
- *  1. requestOtp(phone)        -> supabase.auth.signInWithOtp({ phone })
- *  2. verifyOtp(phone, token)  -> supabase.auth.verifyOtp({ phone, token, type: 'sms' })
+ *  1. requestOtp(email)        -> supabase.auth.signInWithOtp({ email })
+ *  2. verifyOtp(email, token)  -> supabase.auth.verifyOtp({ email, token, type: 'email' })
  *  3. After verification:
- *       - If a profiles row exists for this user -> session restored, role known.
- *       - If NOT -> caller must complete registration (completeRegistration)
- *         which creates the profiles row with the chosen role (role-locked).
+ *       - If a profiles row exists -> session restored, straight to app.
+ *       - If NOT -> caller must complete registration (completeRegistration),
+ *         which creates the profiles row, then routes to onboarding.
  *
- * "Not found" handling:
- *  - loginExistingUser(phone) checks `profiles` for that phone BEFORE sending an OTP
- *    for the LOGIN flow. If no profile exists, we surface a clear
- *    "No account found" error instead of silently creating one or sending an OTP
- *    that leads nowhere.
- *  - Role lock: if a phone is already registered under a different role than the
- *    portal the user is trying to use, we return a ROLE_CONFLICT error with the
- *    existing role so the UI can redirect.
+ * "Account not found" handling:
+ *  - loginRequestOtp(email) checks `profiles` for that email BEFORE sending
+ *    an OTP for the LOGIN flow (shouldCreateUser: false). If no profile
+ *    exists, we surface a real "No account found" error — Supabase never
+ *    silently creates a user or mails an OTP that leads nowhere.
+ *  - signupRequestOtp(email) checks the opposite: if a profile already
+ *    exists, we tell the user to log in instead.
+ *
+ * Google OAuth:
+ *  - loginWithGoogle() calls supabase.auth.signInWithOAuth({ provider: 'google' }).
+ *    Requires the Google provider to be enabled in Supabase Auth settings
+ *    (Dashboard → Authentication → Providers → Google) with a Google Cloud
+ *    OAuth client ID/secret. This is config on Kiran's side; the code path
+ *    works once that's switched on.
  */
 
 export type AuthErrorCode =
-  | 'INVALID_PHONE'
+  | 'INVALID_EMAIL'
   | 'NOT_FOUND'
-  | 'ROLE_CONFLICT'
+  | 'ALREADY_EXISTS'
   | 'OTP_SEND_FAILED'
   | 'OTP_INVALID'
   | 'NETWORK_ERROR'
@@ -36,7 +42,6 @@ export type AuthErrorCode =
 export interface AuthError {
   code: AuthErrorCode
   message: string
-  meta?: { existingRole?: UserRole }
 }
 
 interface AuthContextType {
@@ -44,28 +49,25 @@ interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
-  // Login flow (existing users only)
-  loginRequestOtp: (phone: string, expectedRole: UserRole) => Promise<{ error: AuthError | null }>
-  // Signup flow (new users)
-  signupRequestOtp: (phone: string, expectedRole: UserRole) => Promise<{ error: AuthError | null }>
-  // Verify OTP for either flow
-  verifyOtp: (phone: string, token: string) => Promise<{ error: AuthError | null; isNewUser: boolean }>
-  // Complete profile creation for new users (role-locked at this point)
+  loginRequestOtp: (email: string) => Promise<{ error: AuthError | null }>
+  signupRequestOtp: (email: string) => Promise<{ error: AuthError | null }>
+  verifyOtp: (email: string, token: string) => Promise<{ error: AuthError | null; isNewUser: boolean }>
   completeRegistration: (data: {
     full_name: string
-    role: UserRole
-    city?: string
+    phone?: string
+    role?: UserRole
   }) => Promise<{ error: AuthError | null }>
-  resendOtp: (phone: string) => Promise<{ error: AuthError | null }>
+  resendOtp: (email: string) => Promise<{ error: AuthError | null }>
+  loginWithGoogle: () => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  updateProfile: (data: Partial<Profile>) => Promise<{ error: AuthError | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function toE164(phoneDigits: string): string {
-  // India-only for now; phoneDigits should be exactly 10 digits
-  return `+91${phoneDigits}`
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 function friendlyAuthError(err: unknown): AuthError {
@@ -74,13 +76,13 @@ function friendlyAuthError(err: unknown): AuthError {
     return { code: 'NETWORK_ERROR', message: 'No internet connection. Please check your network and try again.' }
   }
   if (msg.includes('rate limit') || msg.includes('too many')) {
-    return { code: 'OTP_SEND_FAILED', message: 'Too many attempts. Please wait a minute before requesting another OTP.' }
+    return { code: 'OTP_SEND_FAILED', message: 'Too many attempts. Please wait a minute before requesting another code.' }
   }
   if (msg.includes('invalid') && msg.includes('otp')) {
-    return { code: 'OTP_INVALID', message: 'Incorrect OTP. Please check and try again.' }
+    return { code: 'OTP_INVALID', message: 'Incorrect code. Please check and try again.' }
   }
   if (msg.includes('token') && (msg.includes('expired') || msg.includes('invalid'))) {
-    return { code: 'OTP_INVALID', message: 'This OTP has expired or is invalid. Please request a new one.' }
+    return { code: 'OTP_INVALID', message: 'This code has expired or is invalid. Please request a new one.' }
   }
   return { code: 'UNKNOWN', message: 'Something went wrong. Please try again or contact support.' }
 }
@@ -139,49 +141,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile])
 
   /**
-   * LOGIN: phone must already belong to a registered profile with matching role.
-   * - No profile at all  -> NOT_FOUND ("No account found, please sign up")
-   * - Profile exists but role differs -> ROLE_CONFLICT
-   * - Otherwise send OTP.
+   * LOGIN: email must already belong to a registered profile.
+   * No profile at all -> NOT_FOUND ("No account found, please sign up").
+   * shouldCreateUser: false means Supabase itself will refuse to mail an
+   * OTP for an unknown address — the profiles check below is what gives
+   * us a real, immediate "Account not found" message instead of waiting
+   * for that rejection.
    */
-  const loginRequestOtp = useCallback(async (phoneDigits: string, expectedRole: UserRole): Promise<{ error: AuthError | null }> => {
-    if (!/^\d{10}$/.test(phoneDigits)) {
-      return { error: { code: 'INVALID_PHONE', message: 'Enter a valid 10-digit mobile number.' } }
+  const loginRequestOtp = useCallback(async (emailRaw: string): Promise<{ error: AuthError | null }> => {
+    const email = emailRaw.trim().toLowerCase()
+    if (!isValidEmail(email)) {
+      return { error: { code: 'INVALID_EMAIL', message: 'Enter a valid email address.' } }
     }
-    const phone = toE164(phoneDigits)
 
     try {
       const { data: existing, error: lookupErr } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('phone', phone)
+        .select('id')
+        .eq('email', email)
         .maybeSingle()
 
-      if (lookupErr) {
-        return { error: friendlyAuthError(lookupErr) }
-      }
+      if (lookupErr) return { error: friendlyAuthError(lookupErr) }
 
       if (!existing) {
         return {
           error: {
             code: 'NOT_FOUND',
-            message: 'No account found with this phone number. Please sign up first.',
-          },
-        }
-      }
-
-      if (existing.role !== expectedRole) {
-        return {
-          error: {
-            code: 'ROLE_CONFLICT',
-            message: `This number is registered as a ${existing.role}. Please use the ${existing.role} login.`,
-            meta: { existingRole: existing.role as UserRole },
+            message: 'No account found with this email. Please sign up first.',
           },
         }
       }
 
       const { error } = await supabase.auth.signInWithOtp({
-        phone,
+        email,
         options: { shouldCreateUser: false },
       })
       if (error) return { error: friendlyAuthError(error) }
@@ -192,47 +184,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   /**
-   * SIGNUP: phone must NOT already belong to a profile of a *different* role.
-   * If a profile with the SAME role already exists, treat this as an existing
-   * account and route the user to login instead (no duplicate signups).
+   * SIGNUP: if a profile already exists for this email, send them to login
+   * instead of issuing a duplicate OTP.
    */
-  const signupRequestOtp = useCallback(async (phoneDigits: string, expectedRole: UserRole): Promise<{ error: AuthError | null }> => {
-    if (!/^\d{10}$/.test(phoneDigits)) {
-      return { error: { code: 'INVALID_PHONE', message: 'Enter a valid 10-digit mobile number.' } }
+  const signupRequestOtp = useCallback(async (emailRaw: string): Promise<{ error: AuthError | null }> => {
+    const email = emailRaw.trim().toLowerCase()
+    if (!isValidEmail(email)) {
+      return { error: { code: 'INVALID_EMAIL', message: 'Enter a valid email address.' } }
     }
-    const phone = toE164(phoneDigits)
 
     try {
       const { data: existing, error: lookupErr } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('phone', phone)
+        .select('id')
+        .eq('email', email)
         .maybeSingle()
 
-      if (lookupErr) {
-        return { error: friendlyAuthError(lookupErr) }
-      }
+      if (lookupErr) return { error: friendlyAuthError(lookupErr) }
 
       if (existing) {
-        if (existing.role !== expectedRole) {
-          return {
-            error: {
-              code: 'ROLE_CONFLICT',
-              message: `This number is already registered as a ${existing.role}. Please use the ${existing.role} login instead.`,
-              meta: { existingRole: existing.role as UserRole },
-            },
-          }
-        }
         return {
           error: {
-            code: 'NOT_FOUND', // reuse channel: signals "go to login" in UI via a different message
-            message: 'An account with this number already exists. Please log in instead.',
+            code: 'ALREADY_EXISTS',
+            message: 'An account with this email already exists. Please log in instead.',
           },
         }
       }
 
       const { error } = await supabase.auth.signInWithOtp({
-        phone,
+        email,
         options: { shouldCreateUser: true },
       })
       if (error) return { error: friendlyAuthError(error) }
@@ -242,13 +222,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const verifyOtp = useCallback(async (phoneDigits: string, token: string) => {
-    const phone = toE164(phoneDigits)
+  const verifyOtp = useCallback(async (emailRaw: string, token: string) => {
+    const email = emailRaw.trim().toLowerCase()
     try {
       const { data, error } = await supabase.auth.verifyOtp({
-        phone,
+        email,
         token,
-        type: 'sms',
+        type: 'email',
       })
       if (error) return { error: friendlyAuthError(error), isNewUser: false }
 
@@ -264,40 +244,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadProfile])
 
-  const completeRegistration = useCallback(async (regData: { full_name: string; role: UserRole; city?: string }) => {
+  const completeRegistration = useCallback(async (regData: { full_name: string; phone?: string; role?: UserRole }) => {
     if (!user) {
-      return { error: { code: 'UNKNOWN', message: 'Session expired. Please verify your phone number again.' } as AuthError }
+      return { error: { code: 'UNKNOWN', message: 'Session expired. Please verify your email again.' } as AuthError }
     }
-    const phone = user.phone ? `+${user.phone}` : null
-    if (!phone) {
-      return { error: { code: 'UNKNOWN', message: 'Phone number missing from session. Please try again.' } as AuthError }
+    const email = user.email
+    if (!email) {
+      return { error: { code: 'UNKNOWN', message: 'Email missing from session. Please try again.' } as AuthError }
     }
 
     try {
       const { error } = await supabase.from('profiles').insert({
         id: user.id,
-        phone,
-        role: regData.role,
+        email,
+        phone: regData.phone?.trim() || null,
+        role: regData.role || 'traveller',
         full_name: regData.full_name,
-        city: regData.city || null,
       })
       if (error) {
         if (error.code === '23505') {
-          return { error: { code: 'ROLE_CONFLICT', message: 'This phone number is already registered.' } as AuthError }
+          return { error: { code: 'ALREADY_EXISTS', message: 'This email is already registered.' } as AuthError }
         }
         return { error: friendlyAuthError(error) }
       }
 
-      // If signing up as guide, create the linked guide_profiles row (pending verification)
       if (regData.role === 'guide') {
         const { error: gpErr } = await supabase.from('guide_profiles').insert({
           id: user.id,
           hourly_rate: 99,
           status: 'pending',
         })
-        if (gpErr) {
-          return { error: friendlyAuthError(gpErr) }
-        }
+        if (gpErr) return { error: friendlyAuthError(gpErr) }
       }
 
       await loadProfile(user.id)
@@ -307,15 +284,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loadProfile])
 
-  const resendOtp = useCallback(async (phoneDigits: string) => {
-    const phone = toE164(phoneDigits)
+  const updateProfile = useCallback(async (data: Partial<Profile>) => {
+    if (!user) {
+      return { error: { code: 'UNKNOWN', message: 'Session expired. Please log in again.' } as AuthError }
+    }
     try {
-      const { error } = await supabase.auth.resend({ type: 'sms', phone } as never)
-      if (error) {
-        // Fall back to signInWithOtp resend semantics
-        const { error: err2 } = await supabase.auth.signInWithOtp({ phone })
-        if (err2) return { error: friendlyAuthError(err2) }
-      }
+      const { error } = await supabase.from('profiles').update(data).eq('id', user.id)
+      if (error) return { error: friendlyAuthError(error) }
+      await loadProfile(user.id)
+      return { error: null }
+    } catch (err) {
+      return { error: friendlyAuthError(err) }
+    }
+  }, [user, loadProfile])
+
+  const resendOtp = useCallback(async (emailRaw: string) => {
+    const email = emailRaw.trim().toLowerCase()
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email })
+      if (error) return { error: friendlyAuthError(error) }
+      return { error: null }
+    } catch (err) {
+      return { error: friendlyAuthError(err) }
+    }
+  }, [])
+
+  const loginWithGoogle = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {
       return { error: friendlyAuthError(err) }
@@ -332,7 +332,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, session, profile, loading,
         loginRequestOtp, signupRequestOtp, verifyOtp,
-        completeRegistration, resendOtp, signOut, refreshProfile,
+        completeRegistration, resendOtp, loginWithGoogle,
+        signOut, refreshProfile, updateProfile,
       }}
     >
       {children}

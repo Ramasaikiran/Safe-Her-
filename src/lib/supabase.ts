@@ -33,11 +33,17 @@ export type SosStatus = 'active' | 'responding' | 'resolved'
 
 export interface Profile {
   id: string
-  phone: string
+  email: string
+  phone: string | null
   role: UserRole
   full_name: string
   city: string | null
   avatar_url: string | null
+  bio: string | null
+  travel_interests: string[]
+  favorite_destinations: string[]
+  languages: string[]
+  onboarding_completed: boolean
   created_at: string
   updated_at: string
 }

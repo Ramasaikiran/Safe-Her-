@@ -75,7 +75,7 @@ export default function SOS() {
             </div>
 
             <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
-              {user ? `Logged in as +91 ${profile?.phone?.replace('+91', '') || '••••••••••'}` : 'Not logged in — create an account for personalized emergency support'}.
+              {user ? `Logged in as ${profile?.email || '••••••••••'}` : 'Not logged in — create an account for personalized emergency support'}.
               <br />Your location will be shared with emergency contacts when SOS is activated.
             </p>
           </>
