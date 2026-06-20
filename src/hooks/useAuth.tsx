@@ -193,6 +193,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (password.length < 8) {
       return { error: { code: 'WEAK_PASSWORD', message: 'Password must be at least 8 characters.' } }
     }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return { error: { code: 'WEAK_PASSWORD', message: 'Password must include at least one special character.' } }
+    }
 
     try {
       const { data: existing, error: lookupErr } = await supabase

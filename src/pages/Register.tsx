@@ -41,6 +41,7 @@ export default function Register() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Enter a valid email address.'); return }
     if (!/^\d{10}$/.test(phone)) { toast.error('Phone number is required — enter 10 digits.'); return }
     if (password.length < 8) { toast.error('Password must be at least 8 characters.'); return }
+    if (!/[^A-Za-z0-9]/.test(password)) { toast.error('Password must include at least one special character.'); return }
     if (password !== confirmPassword) { toast.error('Passwords do not match.'); return }
 
     setLoading(true)
@@ -175,6 +176,9 @@ export default function Register() {
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.3rem' }}>
+                    8+ characters, including one special character (e.g. ! @ # $).
+                  </p>
                 </div>
                 <div className="form-group">
                   <label>Confirm password</label>
