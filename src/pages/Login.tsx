@@ -1,42 +1,43 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import OtpInput from '../components/OtpInput'
-import { Shield, Mail, ArrowLeft, ShieldCheck } from 'lucide-react'
+import { Shield, Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-type Step = 'email' | 'otp'
-
 /**
- * Login — email + OTP, with Google as a second path.
+ * Login — email + password.
  *
  * "Not found" UX:
  *  - If the entered email has no matching account, a blocking popup
- *    ("No account found") appears instead of silently sending an OTP.
+ *    ("No account found") appears instead of attempting a sign-in.
  *    The user is offered a direct link to Register.
  */
 export default function Login() {
-  const { loginRequestOtp, verifyOtp, loginWithGoogle } = useAuth()
+  const { loginWithPassword, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
 
-  const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [otpError, setOtpError] = useState(false)
-  const [resetKey, setResetKey] = useState(0)
 
   const [notFoundOpen, setNotFoundOpen] = useState(false)
   const [notFoundMsg, setNotFoundMsg] = useState('')
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error('Enter a valid email address.')
       return
     }
+    if (!password) {
+      toast.error('Enter your password.')
+      return
+    }
+
     setLoading(true)
-    const { error } = await loginRequestOtp(email)
+    const { error } = await loginWithPassword(email, password)
     setLoading(false)
 
     if (error) {
@@ -45,23 +46,6 @@ export default function Login() {
         setNotFoundOpen(true)
         return
       }
-      toast.error(error.message)
-      return
-    }
-
-    toast.success(`Code sent to ${email}`)
-    setStep('otp')
-  }
-
-  const handleVerify = async (code: string) => {
-    setLoading(true)
-    setOtpError(false)
-    const { error } = await verifyOtp(email, code)
-    setLoading(false)
-
-    if (error) {
-      setOtpError(true)
-      setResetKey(k => k + 1)
       toast.error(error.message)
       return
     }
@@ -99,58 +83,62 @@ export default function Login() {
         <div className="auth-card fade-up">
           <div style={{ marginBottom: '1.6rem' }}>
             <p className="auth-eyebrow">Sign in</p>
-            <h1 className="auth-title">{step === 'email' ? 'Welcome back' : 'Check your inbox'}</h1>
-            <p className="auth-sub" style={{ marginTop: '0.4rem' }}>
-              {step === 'email' ? 'Sign in with your email — no password needed.' : `Enter the 6-digit code sent to ${email}`}
-            </p>
+            <h1 className="auth-title">Welcome back</h1>
+            <p className="auth-sub" style={{ marginTop: '0.4rem' }}>Sign in with your email and password.</p>
           </div>
 
-          {step === 'email' ? (
-            <>
-              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                <div className="form-group">
-                  <label>Email address</label>
-                  <div style={{ position: 'relative' }}>
-                    <Mail size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
-                    <input
-                      type="email"
-                      placeholder="you@email.com"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                      style={{ paddingLeft: '2.6rem' }}
-                    />
-                  </div>
-                </div>
-                <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
-                  {loading ? 'Sending code…' : 'Continue with email'}
-                </button>
-              </form>
-
-              <div className="auth-divider"><span>or</span></div>
-
-              <button type="button" onClick={handleGoogle} disabled={googleLoading} className="btn-google">
-                <GoogleIcon />
-                {googleLoading ? 'Connecting…' : 'Continue with Google'}
-              </button>
-
-              <div style={{ marginTop: '1.4rem', display: 'flex', justifyContent: 'center' }}>
-                <span className="auth-trust-row"><ShieldCheck size={14} /> No passwords. No spam. Ever.</span>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+            <div className="form-group">
+              <label>Email address</label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                <input
+                  type="email"
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  style={{ paddingLeft: '2.6rem' }}
+                />
               </div>
-            </>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <OtpInput length={6} onComplete={handleVerify} error={otpError} disabled={loading} resetKey={resetKey} />
-              <button
-                type="button"
-                onClick={() => { setStep('email'); setOtpError(false) }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.85rem', cursor: 'pointer', marginTop: '0.6rem' }}
-              >
-                <ArrowLeft size={14} /> Use a different email
-              </button>
-              {loading && <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.8rem' }}>Verifying…</p>}
             </div>
-          )}
+            <div className="form-group">
+              <label>Password</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  style={{ paddingLeft: '2.6rem', paddingRight: '2.6rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <div className="auth-divider"><span>or</span></div>
+
+          <button type="button" onClick={handleGoogle} disabled={googleLoading} className="btn-google">
+            <GoogleIcon />
+            {googleLoading ? 'Connecting…' : 'Continue with Google'}
+          </button>
+
+          <div style={{ marginTop: '1.4rem', display: 'flex', justifyContent: 'center' }}>
+            <span className="auth-trust-row"><ShieldCheck size={14} /> Your data stays private. Always.</span>
+          </div>
 
           <div style={{ textAlign: 'center', marginTop: '1.6rem', paddingTop: '1.6rem', borderTop: '1px solid var(--border)' }}>
             <p style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>

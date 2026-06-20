@@ -4,36 +4,30 @@ import type { User, Session } from '@supabase/supabase-js'
 import { supabase, type Profile, type UserRole } from '../lib/supabase'
 
 /**
- * SafeShe Auth — Email + OTP, with Google as a second option.
+ * SafeShe Auth — Email + password, with a 6-digit OTP step to confirm
+ * the email address at signup. Google is a second path that skips both.
  *
  * Flow:
- *  1. requestOtp(email)        -> supabase.auth.signInWithOtp({ email })
- *  2. verifyOtp(email, token)  -> supabase.auth.verifyOtp({ email, token, type: 'email' })
- *  3. After verification:
- *       - If a profiles row exists -> session restored, straight to app.
- *       - If NOT -> caller must complete registration (completeRegistration),
- *         which creates the profiles row, then routes to onboarding.
- *
- * "Account not found" handling:
- *  - loginRequestOtp(email) checks `profiles` for that email BEFORE sending
- *    an OTP for the LOGIN flow (shouldCreateUser: false). If no profile
- *    exists, we surface a real "No account found" error — Supabase never
- *    silently creates a user or mails an OTP that leads nowhere.
- *  - signupRequestOtp(email) checks the opposite: if a profile already
- *    exists, we tell the user to log in instead.
+ *  SIGNUP: signupWithPassword(email, password) -> supabase.auth.signUp()
+ *          sends a 6-digit confirmation code.
+ *          verifySignupOtp(email, code, type:'signup') confirms the email.
+ *          completeRegistration() then creates the profiles row.
+ *  LOGIN:  loginWithPassword(email, password) -> checks profiles for the
+ *          email FIRST (real "account not found" check, not a generic
+ *          Supabase rejection) then supabase.auth.signInWithPassword().
  *
  * Google OAuth:
- *  - loginWithGoogle() calls supabase.auth.signInWithOAuth({ provider: 'google' }).
- *    Requires the Google provider to be enabled in Supabase Auth settings
- *    (Dashboard → Authentication → Providers → Google) with a Google Cloud
- *    OAuth client ID/secret. This is config on Kiran's side; the code path
- *    works once that's switched on.
+ *  loginWithGoogle() calls supabase.auth.signInWithOAuth({ provider: 'google' }).
+ *  Requires the Google provider enabled in Supabase Auth settings with a
+ *  Google Cloud OAuth client — that's dashboard config, not code.
  */
 
 export type AuthErrorCode =
   | 'INVALID_EMAIL'
   | 'NOT_FOUND'
   | 'ALREADY_EXISTS'
+  | 'INVALID_CREDENTIALS'
+  | 'WEAK_PASSWORD'
   | 'OTP_SEND_FAILED'
   | 'OTP_INVALID'
   | 'NETWORK_ERROR'
@@ -49,15 +43,15 @@ interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
-  loginRequestOtp: (email: string) => Promise<{ error: AuthError | null }>
-  signupRequestOtp: (email: string) => Promise<{ error: AuthError | null }>
-  verifyOtp: (email: string, token: string) => Promise<{ error: AuthError | null; isNewUser: boolean }>
+  loginWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signupWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  verifySignupOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>
   completeRegistration: (data: {
     full_name: string
-    phone?: string
+    phone: string
     role?: UserRole
   }) => Promise<{ error: AuthError | null }>
-  resendOtp: (email: string) => Promise<{ error: AuthError | null }>
+  resendSignupOtp: (email: string) => Promise<{ error: AuthError | null }>
   loginWithGoogle: () => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -76,7 +70,16 @@ function friendlyAuthError(err: unknown): AuthError {
     return { code: 'NETWORK_ERROR', message: 'No internet connection. Please check your network and try again.' }
   }
   if (msg.includes('rate limit') || msg.includes('too many')) {
-    return { code: 'OTP_SEND_FAILED', message: 'Too many attempts. Please wait a minute before requesting another code.' }
+    return { code: 'OTP_SEND_FAILED', message: 'Too many attempts. Please wait a minute and try again.' }
+  }
+  if (msg.includes('invalid login credentials')) {
+    return { code: 'INVALID_CREDENTIALS', message: 'Incorrect password. Please try again.' }
+  }
+  if (msg.includes('email not confirmed')) {
+    return { code: 'INVALID_CREDENTIALS', message: 'Please verify your email before signing in.' }
+  }
+  if (msg.includes('password') && (msg.includes('weak') || msg.includes('short') || msg.includes('least'))) {
+    return { code: 'WEAK_PASSWORD', message: 'Password must be at least 8 characters.' }
   }
   if (msg.includes('invalid') && msg.includes('otp')) {
     return { code: 'OTP_INVALID', message: 'Incorrect code. Please check and try again.' }
@@ -143,12 +146,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * LOGIN: email must already belong to a registered profile.
    * No profile at all -> NOT_FOUND ("No account found, please sign up").
-   * shouldCreateUser: false means Supabase itself will refuse to mail an
-   * OTP for an unknown address — the profiles check below is what gives
-   * us a real, immediate "Account not found" message instead of waiting
-   * for that rejection.
+   * Otherwise attempt the real password sign-in.
    */
-  const loginRequestOtp = useCallback(async (emailRaw: string): Promise<{ error: AuthError | null }> => {
+  const loginWithPassword = useCallback(async (emailRaw: string, password: string): Promise<{ error: AuthError | null }> => {
     const email = emailRaw.trim().toLowerCase()
     if (!isValidEmail(email)) {
       return { error: { code: 'INVALID_EMAIL', message: 'Enter a valid email address.' } }
@@ -172,10 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false },
-      })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {
@@ -185,12 +182,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /**
    * SIGNUP: if a profile already exists for this email, send them to login
-   * instead of issuing a duplicate OTP.
+   * instead. Otherwise create the auth user with a password — Supabase
+   * mails a 6-digit confirmation code automatically.
    */
-  const signupRequestOtp = useCallback(async (emailRaw: string): Promise<{ error: AuthError | null }> => {
+  const signupWithPassword = useCallback(async (emailRaw: string, password: string): Promise<{ error: AuthError | null }> => {
     const email = emailRaw.trim().toLowerCase()
     if (!isValidEmail(email)) {
       return { error: { code: 'INVALID_EMAIL', message: 'Enter a valid email address.' } }
+    }
+    if (password.length < 8) {
+      return { error: { code: 'WEAK_PASSWORD', message: 'Password must be at least 8 characters.' } }
     }
 
     try {
@@ -211,10 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true },
-      })
+      const { error } = await supabase.auth.signUp({ email, password })
       if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {
@@ -222,29 +220,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const verifyOtp = useCallback(async (emailRaw: string, token: string) => {
+  const verifySignupOtp = useCallback(async (emailRaw: string, token: string) => {
     const email = emailRaw.trim().toLowerCase()
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
-        type: 'email',
+        type: 'signup',
       })
-      if (error) return { error: friendlyAuthError(error), isNewUser: false }
-
-      const authedUser = data.user
-      if (!authedUser) {
-        return { error: { code: 'UNKNOWN', message: 'Verification succeeded but no user was returned.' } as AuthError, isNewUser: false }
+      if (error) return { error: friendlyAuthError(error) }
+      if (!data.user) {
+        return { error: { code: 'UNKNOWN', message: 'Verification succeeded but no user was returned.' } as AuthError }
       }
-
-      const existingProfile = await loadProfile(authedUser.id)
-      return { error: null, isNewUser: !existingProfile }
+      return { error: null }
     } catch (err) {
-      return { error: friendlyAuthError(err), isNewUser: false }
+      return { error: friendlyAuthError(err) }
     }
-  }, [loadProfile])
+  }, [])
 
-  const completeRegistration = useCallback(async (regData: { full_name: string; phone?: string; role?: UserRole }) => {
+  const completeRegistration = useCallback(async (regData: { full_name: string; phone: string; role?: UserRole }) => {
     if (!user) {
       return { error: { code: 'UNKNOWN', message: 'Session expired. Please verify your email again.' } as AuthError }
     }
@@ -257,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from('profiles').insert({
         id: user.id,
         email,
-        phone: regData.phone?.trim() || null,
+        phone: regData.phone.trim(),
         role: regData.role || 'traveller',
         full_name: regData.full_name,
       })
@@ -298,10 +292,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loadProfile])
 
-  const resendOtp = useCallback(async (emailRaw: string) => {
+  const resendSignupOtp = useCallback(async (emailRaw: string) => {
     const email = emailRaw.trim().toLowerCase()
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email })
+      const { error } = await supabase.auth.resend({ type: 'signup', email })
       if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {
@@ -331,8 +325,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user, session, profile, loading,
-        loginRequestOtp, signupRequestOtp, verifyOtp,
-        completeRegistration, resendOtp, loginWithGoogle,
+        loginWithPassword, signupWithPassword, verifySignupOtp,
+        completeRegistration, resendSignupOtp, loginWithGoogle,
         signOut, refreshProfile, updateProfile,
       }}
     >

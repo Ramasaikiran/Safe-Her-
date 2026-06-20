@@ -2,26 +2,31 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import OtpInput from '../components/OtpInput'
-import { Shield, Mail, User, Phone, ArrowLeft, ShieldCheck } from 'lucide-react'
+import { Shield, Mail, User, Phone, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Step = 'details' | 'otp'
 
 /**
- * Register — full name + email (required), phone (optional — lets
- * guides reach travellers directly, never used for login).
+ * Register — full name, email, phone (mandatory — lets guides reach
+ * travellers directly, never used for login), password + confirm password.
  *
- * If the email is already registered, signupRequestOtp returns
- * ALREADY_EXISTS and we surface a "log in instead" popup.
+ * After signup, Supabase mails a 6-digit code to confirm the email
+ * (verifySignupOtp, type: 'signup'). Profile row is created only after
+ * that confirmation succeeds.
  */
 export default function Register() {
-  const { signupRequestOtp, verifyOtp, completeRegistration, loginWithGoogle } = useAuth()
+  const { signupWithPassword, verifySignupOtp, completeRegistration, resendSignupOtp, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>('details')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [otpError, setOtpError] = useState(false)
@@ -34,10 +39,12 @@ export default function Register() {
     e.preventDefault()
     if (!fullName.trim()) { toast.error('Please enter your full name.'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Enter a valid email address.'); return }
-    if (phone && !/^\d{10}$/.test(phone)) { toast.error('Phone number should be 10 digits.'); return }
+    if (!/^\d{10}$/.test(phone)) { toast.error('Phone number is required — enter 10 digits.'); return }
+    if (password.length < 8) { toast.error('Password must be at least 8 characters.'); return }
+    if (password !== confirmPassword) { toast.error('Passwords do not match.'); return }
 
     setLoading(true)
-    const { error } = await signupRequestOtp(email)
+    const { error } = await signupWithPassword(email, password)
     setLoading(false)
 
     if (error) {
@@ -57,7 +64,7 @@ export default function Register() {
   const handleVerify = async (code: string) => {
     setLoading(true)
     setOtpError(false)
-    const { error, isNewUser } = await verifyOtp(email, code)
+    const { error } = await verifySignupOtp(email, code)
 
     if (error) {
       setLoading(false)
@@ -67,23 +74,23 @@ export default function Register() {
       return
     }
 
-    if (isNewUser) {
-      const { error: regErr } = await completeRegistration({
-        full_name: fullName.trim(),
-        phone: phone || undefined,
-      })
-      setLoading(false)
-      if (regErr) {
-        toast.error(regErr.message)
-        return
-      }
-      toast.success('Account created 🌸')
-      navigate('/onboarding')
-    } else {
-      setLoading(false)
-      toast.success('Welcome back 🌸')
-      navigate('/dashboard')
+    const { error: regErr } = await completeRegistration({
+      full_name: fullName.trim(),
+      phone,
+    })
+    setLoading(false)
+    if (regErr) {
+      toast.error(regErr.message)
+      return
     }
+    toast.success('Account created 🌸')
+    navigate('/onboarding')
+  }
+
+  const handleResend = async () => {
+    const { error } = await resendSignupOtp(email)
+    if (error) { toast.error(error.message); return }
+    toast.success('New code sent.')
   }
 
   const handleGoogle = async () => {
@@ -105,8 +112,8 @@ export default function Register() {
         <p className="auth-hero-quote">"A community of women, looking out for women — wherever the road leads."</p>
         <div className="auth-hero-foot">
           <span>Free forever</span>
-          <span>No passwords</span>
           <span>Verified guides only</span>
+          <span>24/7 SOS network</span>
         </div>
       </div>
 
@@ -140,24 +147,59 @@ export default function Register() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>Phone number <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(optional)</span></label>
+                  <label>Phone number</label>
                   <div style={{ position: 'relative' }}>
                     <Phone size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
                     <input
                       type="tel" inputMode="numeric" placeholder="98765 43210" value={phone} maxLength={10}
                       onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      style={{ paddingLeft: '2.6rem' }}
+                      required style={{ paddingLeft: '2.6rem' }}
                     />
                   </div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.3rem' }}>
-                    Lets your guide reach you directly during a trip. Never used to sign in.
+                    Required — lets your guide reach you directly during a trip. Never used to sign in.
                   </p>
+                </div>
+                <div className="form-group">
+                  <label>Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                    <input
+                      type={showPassword ? 'text' : 'password'} placeholder="At least 8 characters" value={password}
+                      onChange={e => setPassword(e.target.value)} required minLength={8}
+                      style={{ paddingLeft: '2.6rem', paddingRight: '2.6rem' }}
+                    />
+                    <button type="button" onClick={() => setShowPassword(s => !s)}
+                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Confirm password</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                    <input
+                      type={showConfirm ? 'text' : 'password'} placeholder="Re-enter your password" value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)} required minLength={8}
+                      style={{ paddingLeft: '2.6rem', paddingRight: '2.6rem' }}
+                    />
+                    <button type="button" onClick={() => setShowConfirm(s => !s)}
+                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}
+                      aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                      {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {confirmPassword && password !== confirmPassword && (
+                    <p style={{ fontSize: '0.75rem', color: 'var(--rose)', marginTop: '0.3rem' }}>Passwords don't match.</p>
+                  )}
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted)', lineHeight: 1.5 }}>
                   By signing up you agree to our <span style={{ color: 'var(--rose)', cursor: 'pointer' }}>Terms</span> and <span style={{ color: 'var(--rose)', cursor: 'pointer' }}>Privacy Policy</span>.
                 </p>
                 <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
-                  {loading ? 'Sending code…' : 'Continue with email'}
+                  {loading ? 'Creating account…' : 'Create account'}
                 </button>
               </form>
 
@@ -169,7 +211,7 @@ export default function Register() {
               </button>
 
               <div style={{ marginTop: '1.4rem', display: 'flex', justifyContent: 'center' }}>
-                <span className="auth-trust-row"><ShieldCheck size={14} /> No passwords. No spam. Ever.</span>
+                <span className="auth-trust-row"><ShieldCheck size={14} /> Your data stays private. Always.</span>
               </div>
             </>
           )}
@@ -177,6 +219,10 @@ export default function Register() {
           {step === 'otp' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <OtpInput length={6} onComplete={handleVerify} error={otpError} disabled={loading} resetKey={resetKey} />
+              <button type="button" onClick={handleResend}
+                style={{ background: 'none', border: 'none', color: 'var(--rose)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', marginTop: '1rem' }}>
+                Resend code
+              </button>
               <button
                 type="button"
                 onClick={() => { setStep('details'); setOtpError(false) }}
