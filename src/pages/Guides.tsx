@@ -1,15 +1,74 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Search, Filter, CheckCircle } from 'lucide-react'
 import { GUIDES, CITIES } from '../data/seed'
 import { INDIAN_CITIES, WORLD_COUNTRIES } from '../lib/cities'
+import { supabase } from '../lib/supabase'
 import ComingSoonNotify from '../components/ComingSoonNotify'
+
+interface GuideCard {
+  id: string
+  name: string
+  city: string
+  rating: number
+  reviews: number
+  languages: string[]
+  price_per_hour: number
+  specialties: string[]
+  bio: string
+  avatar_url: string
+  verified: boolean
+  available: boolean
+  trips_completed: number
+}
 
 export default function Guides() {
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState('All')
   const [availableOnly, setAvailableOnly] = useState(false)
   const [sortBy, setSortBy] = useState('rating')
+  const [realGuides, setRealGuides] = useState<GuideCard[]>([])
+
+  useEffect(() => {
+    async function fetchRealGuides() {
+      const { data: gps } = await supabase
+        .from('guide_profiles')
+        .select('id, status, rating, reviews_count, trips_count, hourly_rate, city, languages, specialties, bio, available')
+        .eq('status', 'active')
+        .not('city', 'is', null)
+      if (!gps || gps.length === 0) return
+
+      const ids = gps.map(g => g.id)
+      const { data: profilesData } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', ids)
+      const profileMap = Object.fromEntries((profilesData || []).map(p => [p.id, p]))
+
+      // Real, self-registered guides aren't vetted yet (no admin review
+      // pipeline exists) -- always shown as unverified, never inheriting
+      // the curated seed guides' "verified" badge.
+      const mapped: GuideCard[] = gps.map(gp => {
+        const p = profileMap[gp.id]
+        return {
+          id: gp.id,
+          name: p?.full_name || 'SafeShe Guide',
+          city: gp.city as string,
+          rating: gp.rating || 0,
+          reviews: gp.reviews_count || 0,
+          languages: gp.languages || [],
+          price_per_hour: gp.hourly_rate,
+          specialties: gp.specialties || [],
+          bio: gp.bio || 'New on SafeShe — hasn\'t added a bio yet.',
+          avatar_url: p?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${gp.id}`,
+          verified: false,
+          available: gp.available,
+          trips_completed: gp.trips_count || 0,
+        }
+      })
+      setRealGuides(mapped)
+    }
+    fetchRealGuides()
+  }, [])
+
+  const allGuides = useMemo<GuideCard[]>(() => [...GUIDES, ...realGuides], [realGuides])
 
   const liveCities = CITIES.filter(c => c.status === 'live').map(c => c.name)
   const comingSoonSeed = CITIES.filter(c => c.status === 'coming').map(c => c.name)
@@ -18,7 +77,7 @@ export default function Guides() {
     [] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const filtered = GUIDES
+  const filtered = allGuides
     .filter(g => {
       const matchSearch = g.name.toLowerCase().includes(search.toLowerCase()) ||
         g.specialties.some(s => s.toLowerCase().includes(search.toLowerCase())) ||

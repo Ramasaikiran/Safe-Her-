@@ -4,9 +4,10 @@ import { Shield, Home, Search, BedDouble, LayoutDashboard, LogOut, AlertTriangle
 import toast from 'react-hot-toast'
 
 export default function Navbar() {
-  const { user, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const dashboardPath = profile?.role === 'guide' ? '/guide-dashboard' : '/dashboard'
 
   const handleSignOut = async () => {
     await signOut()
@@ -66,11 +67,11 @@ export default function Navbar() {
           <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'center' }} className="desktop-only">
             {user ? (
               <>
-                <Link to="/dashboard" style={{
+                <Link to={dashboardPath} style={{
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
                   padding: '0.5rem 1.2rem', borderRadius: 50,
-                  background: active('/dashboard') ? 'var(--blush)' : 'transparent',
-                  color: active('/dashboard') ? 'var(--rose)' : 'var(--earth)',
+                  background: active(dashboardPath) ? 'var(--blush)' : 'transparent',
+                  color: active(dashboardPath) ? 'var(--rose)' : 'var(--earth)',
                   fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
                   border: '1.5px solid var(--border)',
                 }}>
@@ -115,7 +116,7 @@ export default function Navbar() {
           { to: '/guides',    label: 'Guides',    icon: <Search size={20} /> },
           { to: '/sos',       label: 'SOS',       icon: <AlertTriangle size={20} />, danger: true },
           { to: '/hostels',   label: 'Stays',     icon: <BedDouble size={20} /> },
-          { to: user ? '/dashboard' : '/login', label: user ? 'Me' : 'Sign In', icon: <LayoutDashboard size={20} /> },
+          { to: user ? dashboardPath : '/login', label: user ? 'Me' : 'Sign In', icon: <LayoutDashboard size={20} /> },
         ].map(t => (
           <Link key={t.to} to={t.to} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',

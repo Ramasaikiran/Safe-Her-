@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import type { UserRole } from '../lib/supabase'
 import OtpInput from '../components/OtpInput'
-import { Shield, Mail, User, Phone, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck } from 'lucide-react'
+import { Shield, Mail, User, Phone, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck, Compass } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Step = 'details' | 'otp'
@@ -20,6 +21,7 @@ export default function Register() {
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>('details')
+  const [role, setRole] = useState<UserRole>('traveller')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -78,6 +80,7 @@ export default function Register() {
     const { error: regErr } = await completeRegistration({
       full_name: fullName.trim(),
       phone,
+      role,
     })
     setLoading(false)
     if (regErr) {
@@ -85,7 +88,7 @@ export default function Register() {
       return
     }
     toast.success('Account created 🌸')
-    navigate('/onboarding')
+    navigate(role === 'guide' ? '/guide-dashboard' : '/onboarding')
   }
 
   const handleResend = async () => {
@@ -130,6 +133,27 @@ export default function Register() {
 
           {step === 'details' && (
             <>
+              <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.2rem' }}>
+                <button type="button" onClick={() => setRole('traveller')}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    padding: '0.7rem', borderRadius: 12, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                    border: `1.5px solid ${role === 'traveller' ? 'var(--rose)' : 'var(--border)'}`,
+                    background: role === 'traveller' ? 'var(--blush)' : 'white', color: role === 'traveller' ? 'var(--rose)' : 'var(--earth)',
+                  }}>
+                  <User size={16} /> I'm a traveller
+                </button>
+                <button type="button" onClick={() => setRole('guide')}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    padding: '0.7rem', borderRadius: 12, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                    border: `1.5px solid ${role === 'guide' ? 'var(--sage)' : 'var(--border)'}`,
+                    background: role === 'guide' ? 'rgba(122,158,126,0.1)' : 'white', color: role === 'guide' ? 'var(--sage)' : 'var(--earth)',
+                  }}>
+                  <Compass size={16} /> I'm a guide
+                </button>
+              </div>
+
               <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                 <div className="form-group">
                   <label>Full name</label>

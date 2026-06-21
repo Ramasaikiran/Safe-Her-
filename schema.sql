@@ -53,6 +53,7 @@ create table if not exists public.guide_profiles (
   reviews_count integer default 0,
   trips_count integer default 0,
   hourly_rate integer default 99,
+  city text,
   languages text[] default '{}',
   specialties text[] default '{}',
   bio text,
@@ -212,3 +213,36 @@ alter table public.bookings add constraint bookings_payment_status_check
   check (payment_status in ('pending', 'paid', 'failed'));
 
 create index if not exists bookings_razorpay_order_id_idx on public.bookings(razorpay_order_id);
+
+-- ════════════════════════════════════════════════════════════
+-- Guide dashboard support: visibility between booking counterparties,
+-- plus public visibility of active (real, registered) guide profiles.
+-- ════════════════════════════════════════════════════════════
+drop policy if exists "Guides can view bookings made for them" on public.bookings;
+create policy "Guides can view bookings made for them"
+  on public.bookings for select
+  using (auth.uid()::text = guide_id);
+
+drop policy if exists "Guides can update bookings made for them" on public.bookings;
+create policy "Guides can update bookings made for them"
+  on public.bookings for update
+  using (auth.uid()::text = guide_id);
+
+drop policy if exists "Booking counterparties can view each other's profile" on public.profiles;
+create policy "Booking counterparties can view each other's profile"
+  on public.profiles for select
+  using (
+    exists (
+      select 1 from public.bookings b
+      where (b.traveller_id = auth.uid() and b.guide_id = profiles.id::text)
+         or (b.traveller_id = profiles.id and b.guide_id = auth.uid()::text)
+    )
+  );
+
+drop policy if exists "Public can view active guide profiles" on public.profiles;
+create policy "Public can view active guide profiles"
+  on public.profiles for select
+  using (
+    role = 'guide'
+    and exists (select 1 from public.guide_profiles gp where gp.id = profiles.id and gp.status = 'active')
+  );

@@ -260,12 +260,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      const isGuide = regData.role === 'guide'
       const { error } = await supabase.from('profiles').insert({
         id: user.id,
         email,
         phone: regData.phone.trim(),
         role: regData.role || 'traveller',
         full_name: regData.full_name,
+        // Guides skip the traveller onboarding flow (photo/bio/interests
+        // don't apply the same way) -- they land straight on their own
+        // dashboard and fill in guide-specific details there instead.
+        onboarding_completed: isGuide,
       })
       if (error) {
         if (error.code === '23505') {
@@ -274,11 +279,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: friendlyAuthError(error) }
       }
 
-      if (regData.role === 'guide') {
+      if (isGuide) {
+        // No moderation queue exists yet, so new guides go active
+        // immediately and are bookable right away. Worth adding a real
+        // review step before this matters at any real scale, given
+        // this is a safety-focused platform.
         const { error: gpErr } = await supabase.from('guide_profiles').insert({
           id: user.id,
           hourly_rate: 99,
-          status: 'pending',
+          status: 'active',
         })
         if (gpErr) return { error: friendlyAuthError(gpErr) }
       }

@@ -16,6 +16,7 @@ import BookHostel from './pages/BookHostel'
 import SOS from './pages/SOS'
 import TrackTrip from './pages/TrackTrip'
 import PaymentStatus from './pages/PaymentStatus'
+import GuideDashboard from './pages/GuideDashboard'
 
 // Lazy-loaded: pulls in the full world country/state dataset, which is
 // only needed on this one screen — keeping it out of the main bundle so
@@ -29,6 +30,17 @@ function PageLoading() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <PageLoading />
+  if (!user) return <Navigate to="/login" replace />
+  if (profile?.role === 'guide') return <Navigate to="/guide-dashboard" replace />
+  if (profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />
+  return <>{children}</>
+}
+
+function GuideRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <PageLoading />
+  if (!user) return <Navigate to="/login" replace />
+  if (profile && profile.role !== 'guide') return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -36,6 +48,7 @@ function OnboardingRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <PageLoading />
   if (!user) return <Navigate to="/login" replace />
+  if (profile?.role === 'guide') return <Navigate to="/guide-dashboard" replace />
   if (profile?.onboarding_completed) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
@@ -56,6 +69,7 @@ function AppRoutes() {
         <Route path="/book/guide/:id" element={<ProtectedRoute><BookGuide /></ProtectedRoute>} />
         <Route path="/book/hostel/:id" element={<ProtectedRoute><BookHostel /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/guide-dashboard" element={<GuideRoute><GuideDashboard /></GuideRoute>} />
         <Route path="/sos" element={<SOS />} />
         <Route path="/track/:tripId" element={<TrackTrip />} />
         <Route path="/payment-status/:bookingId" element={<PaymentStatus />} />
