@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { GUIDES } from '../data/seed'
 import { MapPin, CheckCircle, ArrowLeft, Clock, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
-import PaymentStep, { type PaymentMethod } from '../components/PaymentStep'
+import PaymentStep from '../components/PaymentStep'
 
 export default function BookGuide() {
   const { id } = useParams()
@@ -15,8 +15,6 @@ export default function BookGuide() {
 
   const [form, setForm] = useState({ date: '', hours: 2, notes: '' })
   const [loading, setLoading] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi')
-  const [upiConfirmed, setUpiConfirmed] = useState(false)
 
   if (!guide) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -33,7 +31,6 @@ export default function BookGuide() {
     e.preventDefault()
     if (!form.date) { toast.error('Please select a date'); return }
     if (!user) { toast.error('Please log in to book a guide.'); navigate('/login'); return }
-    if (paymentMethod === 'upi' && !upiConfirmed) { toast.error('Please confirm your UPI payment, or switch to cash.'); return }
     setLoading(true)
     const { error } = await supabase.from('bookings').insert({
       traveller_id: user.id,
@@ -44,8 +41,8 @@ export default function BookGuide() {
       hours: form.hours,
       amount: total,
       notes: form.notes || null,
-      payment_method: paymentMethod,
-      payment_status: paymentMethod === 'upi' ? 'paid' : 'pending',
+      payment_method: 'upi',
+      payment_status: 'pending',
     })
     setLoading(false)
     if (error) {
@@ -142,10 +139,6 @@ export default function BookGuide() {
                 amount={total + Math.round(total * 0.1)}
                 note={`SafeShe guide booking — ${guide.name}`}
                 txnRef={`G-${guide.id}-${Date.now()}`}
-                method={paymentMethod}
-                onMethodChange={setPaymentMethod}
-                upiConfirmed={upiConfirmed}
-                onUpiConfirmedChange={setUpiConfirmed}
               />
 
               {/* Summary */}
