@@ -4,8 +4,9 @@ import { useAuth } from '../hooks/useAuth'
 import { useLiveTrip } from '../hooks/useLiveTrip'
 import { supabase } from '../lib/supabase'
 import { GUIDES, HOSTELS } from '../data/seed'
-import { Search, BedDouble, AlertTriangle, LogOut, Calendar, Phone, Clock, Navigation, Share2, Square } from 'lucide-react'
+import { Search, BedDouble, AlertTriangle, LogOut, Calendar, Phone, Clock, Navigation, Share2, Square, Smartphone } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { payBookingWithUpi } from '../lib/razorpay'
 
 interface Booking {
   id: string
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const { tripId, tracking, start, stop } = useLiveTrip(user?.id)
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null)
+  const [payingId, setPayingId] = useState<string | null>(null)
 
   const displayName  = profile?.full_name || 'Traveller'
   const firstName    = displayName.split(' ')[0]
@@ -84,6 +86,23 @@ export default function Dashboard() {
     pending:   { bg: 'rgba(196,154,114,0.15)', color: 'var(--sand)' },
     cancelled: { bg: '#FEE2E2',                color: '#E87070' },
     completed: { bg: 'rgba(122,158,126,0.12)', color: 'var(--sage)' },
+  }
+
+  const handlePayNow = async (b: Booking) => {
+    setPayingId(b.id)
+    try {
+      await payBookingWithUpi({
+        bookingId: b.id,
+        name: b.type === 'guide' ? 'Guide booking' : 'Hostel stay',
+        description: getLabel(b),
+        prefillEmail: profile?.email,
+        prefillContact: profile?.phone || undefined,
+        onDismiss: () => setPayingId(null),
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not start payment.')
+      setPayingId(null)
+    }
   }
 
   const handleStartTrip = async (bookingId: string) => {
@@ -248,6 +267,12 @@ export default function Dashboard() {
                           UPI {b.payment_status === 'paid' ? 'paid' : 'pending'}
                         </span>
                       )}
+                      {b.payment_status === 'pending' && b.status === 'pending' && (
+                        <button onClick={() => handlePayNow(b)} disabled={payingId === b.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'var(--rose)', border: 'none', borderRadius: 8, padding: '0.3rem 0.8rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white', fontFamily: 'DM Sans,sans-serif', fontWeight: 600 }}>
+                          <Smartphone size={11} /> {payingId === b.id ? 'Opening…' : 'Pay now'}
+                        </button>
+                      )}
                       {b.status === 'confirmed' && activeBookingId === b.id && tracking ? (
                         <>
                           <button onClick={handleShareTrip} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'var(--blush)', border: 'none', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--rose)', fontFamily: 'DM Sans,sans-serif', fontWeight: 600 }}>
@@ -262,7 +287,7 @@ export default function Dashboard() {
                             <Navigation size={11} /> Start trip
                           </button>
                         ) : null}
-                      {b.status === 'confirmed' && (
+                      {(b.status === 'confirmed' || b.status === 'pending') && (
                         <button onClick={() => cancelBooking(b.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '0.25rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--muted)', fontFamily: 'DM Sans,sans-serif' }}>
                           Cancel
                         </button>

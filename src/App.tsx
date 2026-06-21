@@ -14,6 +14,7 @@ import BookGuide from './pages/BookGuide'
 import BookHostel from './pages/BookHostel'
 import SOS from './pages/SOS'
 import TrackTrip from './pages/TrackTrip'
+import PaymentStatus from './pages/PaymentStatus'
 
 // Lazy-loaded: pulls in the full world country/state dataset, which is
 // only needed on this one screen — keeping it out of the main bundle so
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/sos" element={<SOS />} />
         <Route path="/track/:tripId" element={<TrackTrip />} />
+        <Route path="/payment-status/:bookingId" element={<PaymentStatus />} />
       </Routes>
     </>
   )

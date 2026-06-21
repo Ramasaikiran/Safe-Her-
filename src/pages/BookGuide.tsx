@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
+import { payBookingWithUpi } from '../lib/razorpay'
 import { GUIDES } from '../data/seed'
 import { MapPin, CheckCircle, ArrowLeft, Clock, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -9,7 +10,7 @@ import PaymentStep from '../components/PaymentStep'
 
 export default function BookGuide() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const guide = GUIDES.find(g => g.id === id)
 
@@ -26,31 +27,50 @@ export default function BookGuide() {
   )
 
   const total = guide.price_per_hour * form.hours
+  const payableAmount = total + Math.round(total * 0.1)
 
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.date) { toast.error('Please select a date'); return }
     if (!user) { toast.error('Please log in to book a guide.'); navigate('/login'); return }
     setLoading(true)
-    const { error } = await supabase.from('bookings').insert({
+    const { data: inserted, error } = await supabase.from('bookings').insert({
       traveller_id: user.id,
       type: 'guide',
       guide_id: guide.id,
       city: guide.city,
       booking_date: form.date,
       hours: form.hours,
-      amount: total,
+      amount: payableAmount,
+      status: 'pending',
       notes: form.notes || null,
       payment_method: 'upi',
       payment_status: 'pending',
-    })
-    setLoading(false)
-    if (error) {
+    }).select('id').single()
+
+    if (error || !inserted) {
+      setLoading(false)
       toast.error('Could not complete your booking. Please try again.')
       return
     }
-    toast.success('🎉 Booking confirmed! Your guide will contact you within 2 hours.')
-    navigate('/dashboard')
+
+    try {
+      await payBookingWithUpi({
+        bookingId: inserted.id,
+        name: `Guide booking — ${guide.name}`,
+        description: `${form.hours} hours in ${guide.city}`,
+        prefillEmail: profile?.email,
+        prefillContact: profile?.phone || undefined,
+        onDismiss: () => {
+          setLoading(false)
+          toast('Payment cancelled. Your booking is saved as pending — pay anytime from your dashboard.', { icon: '⏳' })
+          navigate('/dashboard')
+        },
+      })
+    } catch (err) {
+      setLoading(false)
+      toast.error(err instanceof Error ? err.message : 'Could not start payment.')
+    }
   }
 
   const today = new Date().toISOString().split('T')[0]

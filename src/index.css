@@ -252,6 +252,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 .scale-in { animation: scaleIn 0.4s cubic-bezier(.34,1.56,.64,1) both; }
 
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
 @media (max-width: 540px) {
   .auth-card { padding: 1.8rem; border-radius: 20px; }
 }

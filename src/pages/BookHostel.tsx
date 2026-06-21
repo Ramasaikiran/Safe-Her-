@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
+import { payBookingWithUpi } from '../lib/razorpay'
 import { HOSTELS } from '../data/seed'
 import { MapPin, CheckCircle, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -9,7 +10,7 @@ import PaymentStep from '../components/PaymentStep'
 
 export default function BookHostel() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const hostel = HOSTELS.find(h => h.id === id)
 
@@ -37,21 +38,42 @@ export default function BookHostel() {
     if (nights < 1) { toast.error('Check-out must be after check-in'); return }
     if (!user) { toast.error('Please log in to book a stay.'); navigate('/login'); return }
     setLoading(true)
-    const { error } = await supabase.from('bookings').insert({
+    const { data: inserted, error } = await supabase.from('bookings').insert({
       traveller_id: user.id,
       type: 'hostel',
       hostel_id: hostel.id,
       city: hostel.city,
       booking_date: form.checkIn,
       amount: total,
+      status: 'pending',
       notes: `Check-in: ${form.checkIn}, Check-out: ${form.checkOut}. ${form.notes}`.trim(),
       payment_method: 'upi',
       payment_status: 'pending',
-    })
-    setLoading(false)
-    if (error) { toast.error('Could not complete your booking. Please try again.'); return }
-    toast.success('🏠 Hostel booked! Confirmation sent to your mobile.')
-    setTimeout(() => navigate('/dashboard'), 1500)
+    }).select('id').single()
+
+    if (error || !inserted) {
+      setLoading(false)
+      toast.error('Could not complete your booking. Please try again.')
+      return
+    }
+
+    try {
+      await payBookingWithUpi({
+        bookingId: inserted.id,
+        name: `Stay — ${hostel.name}`,
+        description: `${nights} night${nights > 1 ? 's' : ''} in ${hostel.city}`,
+        prefillEmail: profile?.email,
+        prefillContact: profile?.phone || undefined,
+        onDismiss: () => {
+          setLoading(false)
+          toast('Payment cancelled. Your booking is saved as pending — pay anytime from your dashboard.', { icon: '⏳' })
+          navigate('/dashboard')
+        },
+      })
+    } catch (err) {
+      setLoading(false)
+      toast.error(err instanceof Error ? err.message : 'Could not start payment.')
+    }
   }
 
   return (

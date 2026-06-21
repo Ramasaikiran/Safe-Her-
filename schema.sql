@@ -198,3 +198,17 @@ as $$
 $$;
 
 grant execute on function public.email_exists(text) to anon, authenticated;
+
+-- ════════════════════════════════════════════════════════════
+-- Razorpay payment columns + edge functions (razorpay-create-order,
+-- razorpay-webhook) deployed separately, not part of this SQL file.
+-- ════════════════════════════════════════════════════════════
+alter table public.bookings
+  add column if not exists razorpay_order_id text,
+  add column if not exists razorpay_payment_id text;
+
+alter table public.bookings drop constraint if exists bookings_payment_status_check;
+alter table public.bookings add constraint bookings_payment_status_check
+  check (payment_status in ('pending', 'paid', 'failed'));
+
+create index if not exists bookings_razorpay_order_id_idx on public.bookings(razorpay_order_id);
