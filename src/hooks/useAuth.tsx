@@ -155,15 +155,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data: existing, error: lookupErr } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle()
+      const { data: exists, error: lookupErr } = await supabase.rpc('email_exists', { check_email: email })
 
       if (lookupErr) return { error: friendlyAuthError(lookupErr) }
 
-      if (!existing) {
+      if (!exists) {
         return {
           error: {
             code: 'NOT_FOUND',
@@ -198,15 +194,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data: existing, error: lookupErr } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle()
+      const { data: exists, error: lookupErr } = await supabase.rpc('email_exists', { check_email: email })
 
       if (lookupErr) return { error: friendlyAuthError(lookupErr) }
 
-      if (existing) {
+      if (exists) {
         return {
           error: {
             code: 'ALREADY_EXISTS',

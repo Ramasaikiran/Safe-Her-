@@ -180,3 +180,21 @@ create policy "Users can upload own avatar"
 create policy "Users can update own avatar"
   on storage.objects for update
   using (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ════════════════════════════════════════════════════════════
+-- email_exists RPC — lets unauthenticated login/signup screens check
+-- whether an email is registered without granting public SELECT on
+-- profiles (which only allows auth.uid() = id, i.e. nothing before
+-- you're logged in). Returns a boolean only, no profile data.
+-- ════════════════════════════════════════════════════════════
+create or replace function public.email_exists(check_email text)
+returns boolean
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  select exists(select 1 from public.profiles where email = lower(trim(check_email)));
+$$;
+
+grant execute on function public.email_exists(text) to anon, authenticated;
