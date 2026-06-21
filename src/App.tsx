@@ -7,6 +7,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AuthCallback from './pages/AuthCallback'
+import ResetPassword from './pages/ResetPassword'
 import Guides from './pages/Guides'
 import Hostels from './pages/Hostels'
 import Dashboard from './pages/Dashboard'
@@ -48,6 +49,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/onboarding" element={<OnboardingRoute><Suspense fallback={<PageLoading />}><Onboarding /></Suspense></OnboardingRoute>} />
         <Route path="/guides" element={<Guides />} />
         <Route path="/hostels" element={<Hostels />} />

@@ -52,6 +52,8 @@ interface AuthContextType {
     role?: UserRole
   }) => Promise<{ error: AuthError | null }>
   resendSignupOtp: (email: string) => Promise<{ error: AuthError | null }>
+  requestPasswordReset: (email: string) => Promise<{ error: AuthError | null }>
+  updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>
   loginWithGoogle: () => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -317,6 +319,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  /**
+   * Forgot password: same real "no account found" check as login uses
+   * (via the email_exists RPC), then Supabase mails a recovery link
+   * pointing at /reset-password. Clicking it gives the browser a
+   * short-lived recovery session, which is what lets updatePassword()
+   * below actually work without needing the old password.
+   */
+  const requestPasswordReset = useCallback(async (emailRaw: string): Promise<{ error: AuthError | null }> => {
+    const email = emailRaw.trim().toLowerCase()
+    if (!isValidEmail(email)) {
+      return { error: { code: 'INVALID_EMAIL', message: 'Enter a valid email address.' } }
+    }
+    try {
+      const { data: exists, error: lookupErr } = await supabase.rpc('email_exists', { check_email: email })
+      if (lookupErr) return { error: friendlyAuthError(lookupErr) }
+      if (!exists) {
+        return { error: { code: 'NOT_FOUND', message: 'No account found with this email. Please sign up first.' } }
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) return { error: friendlyAuthError(error) }
+      return { error: null }
+    } catch (err) {
+      return { error: friendlyAuthError(err) }
+    }
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword: string): Promise<{ error: AuthError | null }> => {
+    if (newPassword.length < 8) {
+      return { error: { code: 'WEAK_PASSWORD', message: 'Password must be at least 8 characters.' } }
+    }
+    if (!/[^A-Za-z0-9]/.test(newPassword)) {
+      return { error: { code: 'WEAK_PASSWORD', message: 'Password must include at least one special character.' } }
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) return { error: friendlyAuthError(error) }
+      return { error: null }
+    } catch (err) {
+      return { error: friendlyAuthError(err) }
+    }
+  }, [])
+
   const loginWithGoogle = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -340,7 +387,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, session, profile, loading,
         loginWithPassword, signupWithPassword, verifySignupOtp,
-        completeRegistration, resendSignupOtp, loginWithGoogle,
+        completeRegistration, resendSignupOtp, requestPasswordReset, updatePassword, loginWithGoogle,
         signOut, refreshProfile, updateProfile,
       }}
     >

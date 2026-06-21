@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Shield, Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { Shield, Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+type Mode = 'login' | 'forgot' | 'forgot-sent'
 
 /**
  * Login — email + password.
@@ -11,11 +13,14 @@ import toast from 'react-hot-toast'
  *  - If the entered email has no matching account, a blocking popup
  *    ("No account found") appears instead of attempting a sign-in.
  *    The user is offered a direct link to Register.
+ *  - "Forgot password" reuses the same real existence check before
+ *    sending a reset email — see useAuth.requestPasswordReset.
  */
 export default function Login() {
-  const { loginWithPassword, loginWithGoogle } = useAuth()
+  const { loginWithPassword, loginWithGoogle, requestPasswordReset } = useAuth()
   const navigate = useNavigate()
 
+  const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -54,6 +59,28 @@ export default function Login() {
     navigate('/dashboard')
   }
 
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Enter a valid email address.')
+      return
+    }
+    setLoading(true)
+    const { error } = await requestPasswordReset(email)
+    setLoading(false)
+
+    if (error) {
+      if (error.code === 'NOT_FOUND') {
+        setNotFoundMsg(error.message)
+        setNotFoundOpen(true)
+        return
+      }
+      toast.error(error.message)
+      return
+    }
+    setMode('forgot-sent')
+  }
+
   const handleGoogle = async () => {
     setGoogleLoading(true)
     const { error } = await loginWithGoogle()
@@ -82,11 +109,18 @@ export default function Login() {
       <div className="auth-panel">
         <div className="auth-card fade-up">
           <div style={{ marginBottom: '1.6rem' }}>
-            <p className="auth-eyebrow">Sign in</p>
-            <h1 className="auth-title">Welcome back</h1>
-            <p className="auth-sub" style={{ marginTop: '0.4rem' }}>Sign in with your email and password.</p>
+            <p className="auth-eyebrow">{mode === 'login' ? 'Sign in' : 'Reset password'}</p>
+            <h1 className="auth-title">
+              {mode === 'login' ? 'Welcome back' : mode === 'forgot' ? 'Forgot your password?' : 'Check your email'}
+            </h1>
+            <p className="auth-sub" style={{ marginTop: '0.4rem' }}>
+              {mode === 'login' && 'Sign in with your email and password.'}
+              {mode === 'forgot' && "Enter your email and we'll send you a link to reset it."}
+              {mode === 'forgot-sent' && `We've sent a password reset link to ${email}.`}
+            </p>
           </div>
 
+          {mode === 'login' && (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
             <div className="form-group">
               <label>Email address</label>
@@ -127,8 +161,63 @@ export default function Login() {
             <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
+            <button
+              type="button"
+              onClick={() => setMode('forgot')}
+              style={{ background: 'none', border: 'none', color: 'var(--rose)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', alignSelf: 'center' }}
+            >
+              Forgot password?
+            </button>
           </form>
+          )}
 
+          {mode === 'forgot' && (
+            <form onSubmit={handleForgotSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div className="form-group">
+                <label>Email address</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                  <input
+                    type="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    style={{ paddingLeft: '2.6rem' }}
+                  />
+                </div>
+              </div>
+              <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
+                {loading ? 'Sending link…' : 'Send reset link'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center', background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                <ArrowLeft size={14} /> Back to sign in
+              </button>
+            </form>
+          )}
+
+          {mode === 'forgot-sent' && (
+            <div style={{ textAlign: 'center' }}>
+              <CheckCircle2 size={40} color="var(--sage)" style={{ marginBottom: '1rem' }} />
+              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '1.6rem' }}>
+                Click the link in that email to set a new password. Didn't get it? Check spam, or try again in a minute.
+              </p>
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center', background: 'none', border: 'none', color: 'var(--rose)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', margin: '0 auto' }}
+              >
+                <ArrowLeft size={14} /> Back to sign in
+              </button>
+            </div>
+          )}
+
+          {mode === 'login' && (
+          <>
           <div className="auth-divider"><span>or</span></div>
 
           <button type="button" onClick={handleGoogle} disabled={googleLoading} className="btn-google">
@@ -146,6 +235,8 @@ export default function Login() {
               <Link to="/register" style={{ color: 'var(--rose)', fontWeight: 600, textDecoration: 'none' }}>Create account →</Link>
             </p>
           </div>
+          </>
+          )}
         </div>
       </div>
 
