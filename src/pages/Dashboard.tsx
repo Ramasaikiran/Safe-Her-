@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useLiveTrip } from '../hooks/useLiveTrip'
 import { supabase } from '../lib/supabase'
 import { GUIDES, HOSTELS } from '../data/seed'
-import { Search, BedDouble, AlertTriangle, LogOut, Calendar, Phone, Clock, Navigation, Share2, Square, Smartphone } from 'lucide-react'
+import { Search, BedDouble, AlertTriangle, LogOut, Calendar, Phone, Clock, Navigation, Share2, Square, Smartphone, Flag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { payBookingWithUpi } from '../lib/razorpay'
 
@@ -31,6 +31,8 @@ export default function Dashboard() {
   const { tripId, tracking, start, stop } = useLiveTrip(user?.id)
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null)
   const [payingId, setPayingId] = useState<string | null>(null)
+  const [reportBooking, setReportBooking] = useState<Booking | null>(null)
+  const [reportSubmitting, setReportSubmitting] = useState(false)
 
   const displayName  = profile?.full_name || 'Traveller'
   const firstName    = displayName.split(' ')[0]
@@ -131,6 +133,30 @@ export default function Dashboard() {
     toast.success('Live location sharing ended.')
   }
 
+  const handleReport = async (reason: 'different_person' | 'unsafe_behavior' | 'other', details: string) => {
+    if (!user || !reportBooking) return
+    setReportSubmitting(true)
+    const { error } = await supabase.from('guide_reports').insert({
+      guide_id: reportBooking.guide_id,
+      reporter_id: user.id,
+      booking_id: reportBooking.id,
+      reason,
+      details: details.trim() || null,
+    })
+    setReportSubmitting(false)
+    if (error) {
+      toast.error('Could not submit report. Please try again.')
+      return
+    }
+    if (reason === 'different_person') {
+      toast.error('Report submitted. This guide has been suspended immediately pending review.', { duration: 6000 })
+    } else {
+      toast.success('Report submitted. Our team will review this.')
+    }
+    setReportBooking(null)
+    fetchBookings()
+  }
+
   const handleSignOut = async () => {
     await signOut()
     toast.success('Signed out safely.')
@@ -138,6 +164,7 @@ export default function Dashboard() {
   }
 
   return (
+    <>
     <div className="page" style={{ background: 'var(--warm)' }}>
       <div className="container" style={{ padding: '2.5rem 2rem', maxWidth: 900 }}>
 
@@ -292,6 +319,12 @@ export default function Dashboard() {
                           Cancel
                         </button>
                       )}
+                      {b.type === 'guide' && b.guide_id && (b.status === 'confirmed' || b.status === 'completed') && (
+                        <button onClick={() => setReportBooking(b)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'none', border: '1px solid var(--rose)', borderRadius: 8, padding: '0.25rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer', color: 'var(--rose)', fontFamily: 'DM Sans,sans-serif' }}>
+                          <Flag size={11} /> Report
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -300,6 +333,71 @@ export default function Dashboard() {
           )}
         </div>
 
+      </div>
+    </div>
+
+    {/* ── Report guide modal ─────────────────────────────────────── */}
+    {reportBooking && <ReportModal
+      onClose={() => setReportBooking(null)}
+      onSubmit={handleReport}
+      submitting={reportSubmitting}
+    />}
+  </>
+  )
+}
+
+// ── Report modal component ──────────────────────────────────────────────
+function ReportModal({ onClose, onSubmit, submitting }: {
+  onClose: () => void
+  onSubmit: (reason: 'different_person' | 'unsafe_behavior' | 'other', details: string) => void
+  submitting: boolean
+}) {
+  const [reason, setReason] = useState<'different_person' | 'unsafe_behavior' | 'other'>('different_person')
+  const [details, setDetails] = useState('')
+
+  const REASONS = [
+    { value: 'different_person' as const, label: '🚨 Different person showed up', desc: 'The guide who arrived is not the same person shown on the profile. This will immediately suspend the guide.' },
+    { value: 'unsafe_behavior' as const, label: '⚠️ Unsafe behaviour', desc: 'The guide behaved in an unsafe or inappropriate way during the trip.' },
+    { value: 'other' as const, label: '📝 Other issue', desc: 'Something else went wrong with this booking.' },
+  ]
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(26,15,10,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div className="card scale-in" style={{ maxWidth: 440, width: '100%', padding: '2rem' }}>
+        <h3 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>Report this guide</h3>
+        <p style={{ fontSize: '0.84rem', color: 'var(--muted)', marginBottom: '1.2rem', lineHeight: 1.5 }}>
+          Your safety matters. Reports are taken seriously and reviewed promptly.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.2rem' }}>
+          {REASONS.map(r => (
+            <button key={r.value} type="button" onClick={() => setReason(r.value)}
+              style={{ textAlign: 'left', padding: '0.8rem 1rem', borderRadius: 12, cursor: 'pointer', border: `1.5px solid ${reason === r.value ? 'var(--rose)' : 'var(--border)'}`, background: reason === r.value ? 'var(--blush)' : 'white' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '0.2rem' }}>{r.label}</div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--muted)', lineHeight: 1.4 }}>{r.desc}</div>
+            </button>
+          ))}
+        </div>
+
+        <div className="form-group">
+          <label>Additional details <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(optional)</span></label>
+          <textarea rows={3} value={details} onChange={e => setDetails(e.target.value)} placeholder="Tell us what happened…" maxLength={500} />
+        </div>
+
+        {reason === 'different_person' && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'var(--blush)', borderRadius: 10, padding: '0.7rem 0.9rem', marginBottom: '1rem', fontSize: '0.78rem', color: 'var(--rose)', lineHeight: 1.5 }}>
+            <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            This report will immediately suspend the guide's account. Only use this if the person who arrived is genuinely not the guide shown on the profile.
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '0.7rem' }}>
+          <button onClick={onClose} className="btn-outline" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting}>Cancel</button>
+          <button onClick={() => onSubmit(reason, details)} disabled={submitting}
+            style={{ flex: 2, justifyContent: 'center', background: 'var(--rose)', color: 'white', border: 'none', borderRadius: 50, padding: '0.7rem 1.4rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Flag size={14} /> {submitting ? 'Submitting…' : 'Submit report'}
+          </button>
+        </div>
       </div>
     </div>
   )

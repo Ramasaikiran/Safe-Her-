@@ -246,3 +246,123 @@ create policy "Public can view active guide profiles"
     role = 'guide'
     and exists (select 1 from public.guide_profiles gp where gp.id = profiles.id and gp.status = 'active')
   );
+
+-- ════════════════════════════════════════════════════════════
+-- Rate limiting (see migration "rate_limiting_infrastructure" for the
+-- full version with comments) -- generic Postgres-level limiter keyed
+-- by client IP, applied to email_exists, waitlist inserts, and
+-- booking inserts. sos_alerts is deliberately excluded.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.rate_limits (
+  bucket_key text primary key,
+  window_start timestamptz not null default now(),
+  count integer not null default 0
+);
+alter table public.rate_limits enable row level security;
+
+create or replace function public.client_ip()
+returns text language sql stable set search_path = '' as $$
+  select trim(split_part(coalesce(current_setting('request.headers', true)::json ->> 'x-forwarded-for', 'unknown'), ',', 1));
+$$;
+
+create or replace function public.check_rate_limit(p_key text, p_max_count integer, p_window_seconds integer)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare
+  v_now timestamptz := now();
+  v_count integer;
+begin
+  insert into public.rate_limits (bucket_key, window_start, count)
+  values (p_key, v_now, 1)
+  on conflict (bucket_key) do update set
+    count = case when public.rate_limits.window_start < v_now - (p_window_seconds || ' seconds')::interval then 1 else public.rate_limits.count + 1 end,
+    window_start = case when public.rate_limits.window_start < v_now - (p_window_seconds || ' seconds')::interval then v_now else public.rate_limits.window_start end
+  returning count into v_count;
+  return v_count <= p_max_count;
+end;
+$$;
+grant execute on function public.check_rate_limit(text, integer, integer) to anon, authenticated, service_role;
+grant execute on function public.client_ip() to anon, authenticated, service_role;
+
+create or replace function public.email_exists(check_email text)
+returns boolean language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.check_rate_limit('email_exists:' || public.client_ip(), 20, 300) then
+    raise exception 'Too many requests. Please wait a moment and try again.';
+  end if;
+  return exists(select 1 from public.profiles where email = lower(trim(check_email)));
+end;
+$$;
+grant execute on function public.email_exists(text) to anon, authenticated;
+
+create or replace function public.enforce_waitlist_rate_limit()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.check_rate_limit('waitlist:' || public.client_ip(), 5, 600) then
+    raise exception 'Too many signups from this connection. Please try again later.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists waitlist_rate_limit on public.waitlist;
+create trigger waitlist_rate_limit before insert on public.waitlist for each row execute function public.enforce_waitlist_rate_limit();
+
+create or replace function public.enforce_booking_rate_limit()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.check_rate_limit('booking:' || public.client_ip(), 10, 3600) then
+    raise exception 'Too many booking attempts. Please try again later.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists booking_rate_limit on public.bookings;
+create trigger booking_rate_limit before insert on public.bookings for each row execute function public.enforce_booking_rate_limit();
+
+-- ════════════════════════════════════════════════════════════
+-- Guide e-KYC (Aadhaar, via a licensed provider -- see lib/ekyc.ts)
+-- and the "different person" safety report that auto-suspends a guide.
+-- ════════════════════════════════════════════════════════════
+alter table public.guide_profiles
+  add column if not exists kyc_status text not null default 'not_started'
+    check (kyc_status in ('not_started', 'pending', 'verified', 'failed')),
+  add column if not exists kyc_provider text,
+  add column if not exists kyc_reference_id text,
+  add column if not exists kyc_verified_name text,
+  add column if not exists kyc_photo_url text,
+  add column if not exists kyc_aadhaar_last4 text,
+  add column if not exists kyc_verified_at timestamptz;
+
+create table if not exists public.guide_reports (
+  id uuid primary key default gen_random_uuid(),
+  guide_id uuid references public.profiles(id) on delete cascade not null,
+  reporter_id uuid references auth.users(id) on delete cascade not null,
+  booking_id uuid references public.bookings(id) on delete set null,
+  reason text not null check (reason in ('different_person', 'unsafe_behavior', 'other')),
+  details text,
+  created_at timestamptz default now()
+);
+alter table public.guide_reports enable row level security;
+drop policy if exists "Travellers can report a guide they booked" on public.guide_reports;
+create policy "Travellers can report a guide they booked"
+  on public.guide_reports for insert
+  with check (
+    auth.uid() = reporter_id
+    and exists (select 1 from public.bookings b where b.id = booking_id and b.traveller_id = auth.uid() and b.guide_id = guide_id::text)
+  );
+drop policy if exists "Reporters can view their own reports" on public.guide_reports;
+create policy "Reporters can view their own reports" on public.guide_reports for select using (auth.uid() = reporter_id);
+
+create or replace function public.handle_different_person_report()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if new.reason = 'different_person' then
+    update public.guide_profiles set status = 'suspended' where id = new.guide_id;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists guide_reports_auto_suspend on public.guide_reports;
+create trigger guide_reports_auto_suspend after insert on public.guide_reports
+  for each row execute function public.handle_different_person_report();
+
+create index if not exists guide_reports_guide_id_idx on public.guide_reports(guide_id);
