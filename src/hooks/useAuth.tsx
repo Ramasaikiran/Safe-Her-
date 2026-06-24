@@ -49,6 +49,7 @@ interface AuthContextType {
   completeRegistration: (data: {
     full_name: string
     phone: string
+    current_location?: string
     role?: UserRole
   }) => Promise<{ error: AuthError | null }>
   resendSignupOtp: (email: string) => Promise<{ error: AuthError | null }>
@@ -250,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const completeRegistration = useCallback(async (regData: { full_name: string; phone: string; role?: UserRole }) => {
+  const completeRegistration = useCallback(async (regData: { full_name: string; phone: string; current_location?: string; role?: UserRole }) => {
     if (!user) {
       return { error: { code: 'UNKNOWN', message: 'Session expired. Please verify your email again.' } as AuthError }
     }
@@ -267,9 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: regData.phone.trim(),
         role: regData.role || 'traveller',
         full_name: regData.full_name,
-        // Guides skip the traveller onboarding flow (photo/bio/interests
-        // don't apply the same way) -- they land straight on their own
-        // dashboard and fill in guide-specific details there instead.
+        city: regData.current_location?.trim() || null,
         onboarding_completed: isGuide,
       })
       if (error) {
@@ -288,6 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: user.id,
           hourly_rate: 99,
           status: 'active',
+          city: regData.current_location?.trim() || null,
         })
         if (gpErr) return { error: friendlyAuthError(gpErr) }
       }

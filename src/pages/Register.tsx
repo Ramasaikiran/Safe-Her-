@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import type { UserRole } from '../lib/supabase'
 import OtpInput from '../components/OtpInput'
-import { Shield, Mail, User, Phone, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck, Compass } from 'lucide-react'
+import { Shield, Mail, User, Phone, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck, Compass, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Step = 'details' | 'otp'
@@ -25,6 +25,7 @@ export default function Register() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [currentLocation, setCurrentLocation] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -42,6 +43,7 @@ export default function Register() {
     if (!fullName.trim()) { toast.error('Please enter your full name.'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Enter a valid email address.'); return }
     if (!/^\d{10}$/.test(phone)) { toast.error('Phone number is required — enter 10 digits.'); return }
+    if (!currentLocation.trim()) { toast.error('Please enter your current city / location.'); return }
     if (password.length < 8) { toast.error('Password must be at least 8 characters.'); return }
     if (!/[^A-Za-z0-9]/.test(password)) { toast.error('Password must include at least one special character.'); return }
     if (password !== confirmPassword) { toast.error('Passwords do not match.'); return }
@@ -80,6 +82,7 @@ export default function Register() {
     const { error: regErr } = await completeRegistration({
       full_name: fullName.trim(),
       phone,
+      current_location: currentLocation.trim(),
       role,
     })
     setLoading(false)
@@ -183,6 +186,25 @@ export default function Register() {
                   </div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.3rem' }}>
                     Required — lets your guide reach you directly during a trip. Never used to sign in.
+                  </p>
+                </div>
+                <div className="form-group">
+                  <label>Current city / location</label>
+                  <div style={{ position: 'relative' }}>
+                    <MapPin size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                    <input
+                      type="text"
+                      placeholder={role === 'guide' ? "e.g. Bangalore \u2014 where you'll guide travellers" : 'e.g. Bangalore \u2014 your current city'}
+                      value={currentLocation}
+                      onChange={e => setCurrentLocation(e.target.value)}
+                      required
+                      style={{ paddingLeft: '2.6rem' }}
+                    />
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.3rem' }}>
+                    {role === 'guide'
+                      ? 'The city where you live and will show travellers around. Travellers searching this city will find you.'
+                      : 'Helps us show you the right guides and stays near you.'}
                   </p>
                 </div>
                 <div className="form-group">
