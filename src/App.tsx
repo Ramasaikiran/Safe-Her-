@@ -17,6 +17,10 @@ import SOS from './pages/SOS'
 import TrackTrip from './pages/TrackTrip'
 import PaymentStatus from './pages/PaymentStatus'
 import GuideDashboard from './pages/GuideDashboard'
+import Safety from './pages/Safety'
+import CitySafety from './pages/CitySafety'
+import SafetyAssistant from './pages/SafetyAssistant'
+import Companions from './pages/Companions'
 
 // Lazy-loaded: pulls in the full world country/state dataset, which is
 // only needed on this one screen — keeping it out of the main bundle so
@@ -28,8 +32,8 @@ function PageLoading() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <PageLoading />
+  const { user, profile, loading, profileLoaded } = useAuth()
+  if (loading || (user && !profileLoaded)) return <PageLoading />
   if (!user) return <Navigate to="/login" replace />
   if (profile?.role === 'guide') return <Navigate to="/guide-dashboard" replace />
   if (profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />
@@ -37,16 +41,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function GuideRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <PageLoading />
+  const { user, profile, loading, profileLoaded } = useAuth()
+  if (loading || (user && !profileLoaded)) return <PageLoading />
   if (!user) return <Navigate to="/login" replace />
   if (profile && profile.role !== 'guide') return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
 function OnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <PageLoading />
+  const { user, profile, loading, profileLoaded } = useAuth()
+  if (loading || (user && !profileLoaded)) return <PageLoading />
   if (!user) return <Navigate to="/login" replace />
   if (profile?.role === 'guide') return <Navigate to="/guide-dashboard" replace />
   if (profile?.onboarding_completed) return <Navigate to="/dashboard" replace />
@@ -71,6 +75,10 @@ function AppRoutes() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/guide-dashboard" element={<GuideRoute><GuideDashboard /></GuideRoute>} />
         <Route path="/sos" element={<SOS />} />
+        <Route path="/safety" element={<Safety />} />
+        <Route path="/safety/assistant" element={<SafetyAssistant />} />
+        <Route path="/safety/companions" element={<Companions />} />
+        <Route path="/safety/:city" element={<CitySafety />} />
         <Route path="/track/:tripId" element={<TrackTrip />} />
         <Route path="/payment-status/:bookingId" element={<PaymentStatus />} />
       </Routes>

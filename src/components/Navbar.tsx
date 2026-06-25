@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Shield, Home, Search, BedDouble, LayoutDashboard, LogOut, AlertTriangle } from 'lucide-react'
+import { Shield, Home, Search, BedDouble, LayoutDashboard, LogOut, AlertTriangle, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Navbar() {
@@ -21,6 +21,7 @@ export default function Navbar() {
   const navLinks = [
     { to: '/guides',  label: 'Find a Guide',  icon: <Search size={17} /> },
     { to: '/hostels', label: 'Safe Stays',     icon: <BedDouble size={17} /> },
+    { to: '/safety',  label: 'Safety',         icon: <ShieldCheck size={17} /> },
     { to: '/sos',     label: 'SOS',            icon: <AlertTriangle size={17} />, danger: true },
   ]
 
@@ -114,6 +115,7 @@ export default function Navbar() {
         {[
           { to: '/',          label: 'Home',      icon: <Home size={20} /> },
           { to: '/guides',    label: 'Guides',    icon: <Search size={20} /> },
+          { to: '/safety',    label: 'Safety',    icon: <ShieldCheck size={20} /> },
           { to: '/sos',       label: 'SOS',       icon: <AlertTriangle size={20} />, danger: true },
           { to: '/hostels',   label: 'Stays',     icon: <BedDouble size={20} /> },
           { to: user ? dashboardPath : '/login', label: user ? 'Me' : 'Sign In', icon: <LayoutDashboard size={20} /> },

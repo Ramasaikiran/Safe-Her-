@@ -43,6 +43,7 @@ interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
+  profileLoaded: boolean
   loginWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signupWithPassword: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: AuthError | null }>
   verifySignupOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>
@@ -98,6 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  // True only after at least one profile fetch has completed for the
+  // current user. Guards against the race where user is set but the
+  // DB read hasn't returned yet — route guards see (user + null profile)
+  // and can wait on this flag instead of making wrong routing decisions.
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -108,9 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error('Failed to load profile:', error.message)
       setProfile(null)
+      setProfileLoaded(true)
       return null
     }
     setProfile(data as Profile | null)
+    setProfileLoaded(true)
     return data as Profile | null
   }, [])
 
@@ -134,9 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
+        setProfileLoaded(false) // mark as loading while fetch runs
         await loadProfile(session.user.id)
       } else {
         setProfile(null)
+        setProfileLoaded(false)
       }
     })
 
@@ -394,7 +404,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user, session, profile, loading,
+        user, session, profile, loading, profileLoaded,
         loginWithPassword, signupWithPassword, verifySignupOtp,
         completeRegistration, resendSignupOtp, requestPasswordReset, updatePassword, loginWithGoogle,
         signOut, refreshProfile, updateProfile,
