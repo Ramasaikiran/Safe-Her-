@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Shield, Send, Loader2, Bot, User, RotateCcw } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -59,19 +60,11 @@ export default function SafetyAssistant() {
     setLoading(true)
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-        }),
+      const { data, error } = await supabase.functions.invoke('ai-safety-assistant', {
+        body: { messages: newMessages.map(m => ({ role: m.role, content: m.content })) },
       })
-      const data = await res.json()
-      const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t get a response. Please try again.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      if (error || !data?.reply) throw new Error(data?.error || 'No response')
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Connection issue. Please check your internet and try again.' }])
     }
