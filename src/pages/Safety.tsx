@@ -42,6 +42,57 @@ export default function Safety() {
 
   return (
     <div className="page" style={{ background: 'var(--cream)', paddingTop: '5.5rem' }}>
+      <style>{`
+        .safety-search-wrap {
+          position: relative;
+          margin-bottom: 1.2rem;
+          width: 100%;
+        }
+        .safety-search-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--muted);
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+        }
+        .safety-search-input {
+          width: 100%;
+          padding: 0.85rem 1rem 0.85rem 2.6rem;
+          border-radius: 14px;
+          border: 1.5px solid var(--border);
+          background: white;
+          font-size: 0.95rem;
+          font-family: 'DM Sans', sans-serif;
+          color: var(--earth);
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          box-sizing: border-box;
+        }
+        .safety-search-input:focus {
+          border-color: var(--rose);
+          box-shadow: 0 0 0 3px rgba(232,68,90,0.08);
+        }
+        .safety-search-input::placeholder { color: var(--muted); }
+
+        @media (min-width: 768px) {
+          .safety-search-input {
+            font-size: 1rem;
+            padding: 0.95rem 1.2rem 0.95rem 2.8rem;
+            border-radius: 16px;
+          }
+        }
+        @media (min-width: 1200px) {
+          .safety-search-input {
+            font-size: 1.05rem;
+            padding: 1rem 1.4rem 1rem 3rem;
+            border-radius: 18px;
+          }
+        }
+      `}</style>
+
       <div className="container" style={{ maxWidth: 760, paddingBottom: '3rem' }}>
 
         {/* Hero */}
@@ -94,11 +145,18 @@ export default function Safety() {
           </div>
         </Link>
 
-        {/* City search */}
-        <div style={{ position: 'relative', marginBottom: '1.2rem' }}>
-          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
-          <input type="text" placeholder="Search any city or country…" value={search} onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: '2.6rem', width: '100%' }} />
+        {/* Responsive search bar */}
+        <div className="safety-search-wrap">
+          <span className="safety-search-icon">
+            <Search size={16} />
+          </span>
+          <input
+            className="safety-search-input"
+            type="text"
+            placeholder="Search any city or country…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
 
         {/* Score legend */}
