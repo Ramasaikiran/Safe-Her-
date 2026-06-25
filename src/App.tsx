@@ -21,6 +21,7 @@ import Safety from './pages/Safety'
 import CitySafety from './pages/CitySafety'
 import SafetyAssistant from './pages/SafetyAssistant'
 import Companions from './pages/Companions'
+import AdminPanel from './pages/AdminPanel'
 
 // Lazy-loaded: pulls in the full world country/state dataset, which is
 // only needed on this one screen — keeping it out of the main bundle so
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route path="/safety/:city" element={<CitySafety />} />
         <Route path="/track/:tripId" element={<TrackTrip />} />
         <Route path="/payment-status/:bookingId" element={<PaymentStatus />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
     </>
   )
