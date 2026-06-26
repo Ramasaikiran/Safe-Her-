@@ -45,6 +45,7 @@ export default function SafetyAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [ragCity, setRagCity] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function SafetyAssistant() {
         body: { messages: newMessages.map(m => ({ role: m.role, content: m.content })) },
       })
       if (error || !data?.reply) throw new Error(data?.error || 'No response')
+      if (data.city) setRagCity(data.city)
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Connection issue. Please check your internet and try again.' }])
@@ -86,7 +88,9 @@ export default function SafetyAssistant() {
             </div>
             <div>
               <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>AI Safety Assistant</h1>
-              <p style={{ fontSize: '0.75rem', color: 'var(--sage)', margin: 0, fontWeight: 600 }}>● Community-powered · Always learning</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--sage)', margin: 0, fontWeight: 600 }}>
+                ● {ragCity ? `Using real SafeShe data for ${ragCity}` : 'Community-powered · Always learning'}
+              </p>
             </div>
           </div>
           {messages.length > 0 && (

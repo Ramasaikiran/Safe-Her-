@@ -192,10 +192,30 @@ export default function Companions() {
           </button>
         )}
 
-        {/* Filter */}
-        <div style={{ position: 'relative', marginBottom: '1.2rem' }}>
-          <MapPin size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
-          <input type="text" placeholder="Filter by city (from or to)…" value={filterCity} onChange={e => setFilterCity(e.target.value)} style={{ paddingLeft: '2.4rem', width: '100%' }} />
+        {/* Filter — responsive search bar */}
+        <style>{`
+          .comp-search-wrap { position: relative; margin-bottom: 1.2rem; width: 100%; }
+          .comp-search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex; align-items: center; }
+          .comp-search-input {
+            width: 100%; padding: 0.82rem 1rem 0.82rem 2.55rem;
+            border-radius: 14px; border: 1.5px solid var(--border);
+            background: white; font-size: 0.92rem;
+            font-family: 'DM Sans', sans-serif; color: var(--earth);
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+          }
+          .comp-search-input:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(122,158,126,0.1); }
+          .comp-search-input::placeholder { color: var(--muted); }
+          @media (min-width: 768px) {
+            .comp-search-input { font-size: 0.95rem; padding: 0.9rem 1.1rem 0.9rem 2.7rem; border-radius: 16px; }
+          }
+          @media (min-width: 1200px) {
+            .comp-search-input { font-size: 1rem; padding: 0.95rem 1.2rem 0.95rem 2.8rem; border-radius: 18px; }
+          }
+        `}</style>
+        <div className="comp-search-wrap">
+          <span className="comp-search-icon"><MapPin size={15} /></span>
+          <input className="comp-search-input" type="text" placeholder="Filter by city (from or to)…" value={filterCity} onChange={e => setFilterCity(e.target.value)} />
         </div>
 
         {/* Listings */}
