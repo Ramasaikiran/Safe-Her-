@@ -74,29 +74,29 @@ export default function Home() {
         .cro-google-btn {
           display: flex; align-items: center; justify-content: center; gap: 0.7rem;
           width: 100%; padding: 0.95rem 1.5rem; border-radius: 50px;
-          background: white; border: 2px solid rgba(255,255,255,0.9);
+          background: white; border: 2px solid var(--border);
           font-size: 1rem; font-weight: 700; font-family: 'DM Sans',sans-serif;
           color: #1a1a1a; cursor: pointer; transition: all 0.2s;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+          box-shadow: 0 2px 12px rgba(61,35,20,0.1);
         }
-        .cro-google-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+        .cro-google-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,35,20,0.15); border-color: var(--rose); }
         .cro-google-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
         .cro-stat-bar {
           display: flex; flex-wrap: wrap; gap: 1.2rem;
-          background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+          background: white; border: 1.5px solid var(--border);
           border-radius: 16px; padding: 1rem 1.4rem; margin-top: 2.5rem;
         }
         .cro-stat-item { text-align: center; flex: 1; min-width: 80px; }
-        .cro-stat-val { font-weight: 900; font-size: 1.2rem; color: white; line-height: 1; }
-        .cro-stat-lbl { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 0.2rem; }
+        .cro-stat-val { font-weight: 900; font-size: 1.2rem; color: var(--night); line-height: 1; }
+        .cro-stat-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 0.2rem; }
 
         .cro-trust-row {
           display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.8rem;
         }
         .cro-trust-item {
           display: flex; align-items: center; gap: 0.4rem;
-          color: rgba(255,255,255,0.6); font-size: 0.82rem;
+          color: var(--earth); font-size: 0.82rem;
         }
 
         .cro-sticky {
@@ -122,7 +122,7 @@ export default function Home() {
 
         .cro-urgency {
           display: inline-flex; align-items: center; gap: 0.4rem;
-          background: rgba(232,68,90,0.1); border: 1px solid rgba(232,68,90,0.2);
+          background: rgba(232,68,90,0.08); border: 1.5px solid rgba(232,68,90,0.25);
           border-radius: 20px; padding: 0.3rem 0.8rem;
           font-size: 0.78rem; font-weight: 600; color: var(--rose);
           margin-bottom: 1.2rem; animation: pulse-soft 2.5s infinite;
@@ -136,19 +136,19 @@ export default function Home() {
           display: flex; align-items: center; gap: 0.8rem; margin: 1rem 0;
         }
         .cro-divider::before, .cro-divider::after {
-          content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.15);
+          content: ''; flex: 1; height: 1px; background: var(--border);
         }
-        .cro-divider span { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+        .cro-divider span { font-size: 0.75rem; color: var(--muted); }
       `}</style>
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
       <section style={{
         minHeight: '92vh', display: 'flex', alignItems: 'center',
-        background: 'linear-gradient(160deg, var(--night) 0%, #3D1520 55%, #5C2030 100%)',
+        background: 'linear-gradient(150deg, #FBF7F4 0%, #FFF0F2 45%, #FDE8EC 100%)',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', top: -120, right: -120, width: 520, height: 520, borderRadius: '50%', background: 'rgba(232,68,90,0.08)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -80, left: -60, width: 380, height: 380, borderRadius: '50%', background: 'rgba(196,154,114,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -120, right: -120, width: 520, height: 520, borderRadius: '50%', background: 'rgba(232,68,90,0.12)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -80, left: -60, width: 380, height: 380, borderRadius: '50%', background: 'rgba(196,154,114,0.14)', pointerEvents: 'none' }} />
 
         <div className="container" style={{ padding: '5rem 1.5rem 4rem', position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,480px)', gap: '4rem', alignItems: 'center' }}
@@ -163,15 +163,15 @@ export default function Home() {
                 47 women joined SafeShe this week
               </div>
 
-              <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(2.2rem,5.5vw,3.8rem)', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: '1.2rem' }}>
+              <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(2.2rem,5.5vw,3.8rem)', fontWeight: 900, color: 'var(--night)', lineHeight: 1.1, marginBottom: '1.2rem' }}>
                 Solo travel in India<br />
                 <em style={{ color: 'var(--rose)' }}>without the fear.</em>
               </h1>
 
-              <p style={{ fontSize: 'clamp(0.95rem,2vw,1.1rem)', color: 'rgba(255,255,255,0.68)', lineHeight: 1.75, marginBottom: '0.8rem', maxWidth: 480 }}>
-                SafeShe connects you with <strong style={{ color: 'white' }}>Aadhaar-verified women guides</strong>, safe hostels, real-time safety scores, and a one-tap SOS — so you explore confidently.
+              <p style={{ fontSize: 'clamp(0.95rem,2vw,1.1rem)', color: 'var(--earth)', lineHeight: 1.75, marginBottom: '0.8rem', maxWidth: 480 }}>
+                SafeShe connects you with <strong style={{ color: 'var(--rose)' }}>Aadhaar-verified women guides</strong>, safe hostels, real-time safety scores, and a one-tap SOS — so you explore confidently.
               </p>
-              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)', marginBottom: '2.2rem' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '2.2rem' }}>
                 Free to join. Trusted by 12,400+ women across India.
               </p>
 
@@ -204,12 +204,12 @@ export default function Home() {
 
                   <div className="cro-divider"><span>or sign up with email</span></div>
 
-                  <Link to="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 1.8rem', borderRadius: 50, fontWeight: 600, fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)', border: '1.5px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}>
+                  <Link to="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 1.8rem', borderRadius: 50, fontWeight: 600, fontSize: '0.9rem', color: 'var(--earth)', border: '1.5px solid var(--border)', textDecoration: 'none' }}>
                     Sign up with email <ChevronRight size={15} />
                   </Link>
                   <div style={{ marginTop: '0.8rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>Already have an account? </span>
-                    <Link to="/login" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Sign in</Link>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>Already have an account? </span>
+                    <Link to="/login" style={{ fontSize: '0.8rem', color: 'var(--rose)', fontWeight: 600 }}>Sign in</Link>
                   </div>
                 </>
               )}
@@ -237,43 +237,43 @@ export default function Home() {
             {/* Right — social proof card (desktop only) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
               {/* Live activity feed */}
-              <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '1.1rem 1.3rem' }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.8rem' }}>🟢 Live activity</p>
+              <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.1rem 1.3rem', boxShadow: '0 2px 16px rgba(61,35,20,0.07)' }}>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.8rem' }}>🟢 Live activity</p>
                 {[
                   { text: 'Priya booked a guide in Goa', time: '2m ago' },
                   { text: 'New safety tips added for Delhi', time: '15m ago' },
                   { text: 'Meera completed her Jaipur trip safely', time: '1h ago' },
                   { text: 'SOS test — response in 78 seconds', time: '3h ago' },
                 ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>{item.text}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', flexShrink: 0, marginLeft: '0.8rem' }}>{item.time}</span>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--earth)' }}>{item.text}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', flexShrink: 0, marginLeft: '0.8rem' }}>{item.time}</span>
                   </div>
                 ))}
               </div>
 
               {/* Mini testimonial */}
-              <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '1.2rem 1.3rem' }}>
+              <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.2rem 1.3rem', boxShadow: '0 2px 16px rgba(61,35,20,0.07)' }}>
                 <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.7rem' }}>
                   {[1,2,3,4,5].map(s => <Star key={s} size={13} fill="#FFB800" color="#FFB800" />)}
                 </div>
-                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '0.8rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--earth)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '0.8rem' }}>
                   "First solo trip to Delhi. My guide was with me from airport to hotel. Felt completely safe the whole time."
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,var(--rose),var(--sand))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'white' }}>SR</div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'white' }}>Sneha R.</div>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Delhi trip · Verified booking</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--night)' }}>Sneha R.</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>Delhi trip · Verified booking</div>
                   </div>
                 </div>
               </div>
 
               {/* Guide availability indicator */}
-              <div style={{ background: 'rgba(122,158,126,0.12)', border: '1px solid rgba(122,158,126,0.25)', borderRadius: 16, padding: '1rem 1.3rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <div style={{ background: 'rgba(122,158,126,0.08)', border: '1.5px solid rgba(122,158,126,0.3)', borderRadius: 16, padding: '1rem 1.3rem', boxShadow: '0 2px 12px rgba(122,158,126,0.1)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--sage)', flexShrink: 0, boxShadow: '0 0 0 3px rgba(122,158,126,0.25)', animation: 'pulse-soft 2s infinite' }} />
-                <span style={{ fontSize: '0.83rem', color: 'rgba(255,255,255,0.75)' }}>
-                  <strong style={{ color: 'white' }}>6 verified guides</strong> available to book right now
+                <span style={{ fontSize: '0.83rem', color: 'var(--earth)' }}>
+                  <strong style={{ color: 'var(--sage)' }}>6 verified guides</strong> available to book right now
                 </span>
               </div>
             </div>
@@ -473,7 +473,7 @@ export default function Home() {
                 </>
               )}
             </button>
-            <Link to="/register" style={{ fontSize: '0.83rem', color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+            <Link to="/register" style={{ fontSize: '0.83rem', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
               or sign up with email →
             </Link>
           </div>
