@@ -52,7 +52,7 @@ interface AuthContextType {
     phone: string
     current_location?: string
     role?: UserRole
-  }) => Promise<{ error: AuthError | null }>
+  }) => Promise<{ error: AuthError | null; role?: string }>
   resendSignupOtp: (email: string) => Promise<{ error: AuthError | null }>
   requestPasswordReset: (email: string) => Promise<{ error: AuthError | null }>
   updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>
