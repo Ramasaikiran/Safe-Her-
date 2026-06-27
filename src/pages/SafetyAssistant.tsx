@@ -64,11 +64,24 @@ export default function SafetyAssistant() {
       const { data, error } = await supabase.functions.invoke('ai-safety-assistant', {
         body: { messages: newMessages.map(m => ({ role: m.role, content: m.content })) },
       })
-      if (error || !data?.reply) throw new Error(data?.error || 'No response')
-      if (data.city) setRagCity(data.city)
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection issue. Please check your internet and try again.' }])
+
+      if (error) {
+        const notDeployed = error.message?.includes('Failed to send') || error.message?.includes('404')
+        const msg = notDeployed
+          ? 'AI assistant not active yet. Deploy the edge function to enable it.'
+          : `Error: ${error.message}`
+        setMessages(prev => [...prev, { role: 'assistant', content: msg }])
+      } else if (!data?.reply) {
+        setMessages(prev => [...prev, { role: 'assistant', content: data?.error || 'No response. Please try again.' }])
+      } else {
+        if (data.city) setRagCity(data.city)
+        setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+      }
+    } catch (err: any) {
+      const msg = err?.message?.includes('fetch')
+        ? 'Network error. Check your internet connection and try again.'
+        : 'Unexpected error. Please try again.'
+      setMessages(prev => [...prev, { role: 'assistant', content: msg }])
     }
     setLoading(false)
   }
