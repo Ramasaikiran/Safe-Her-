@@ -181,7 +181,7 @@ export default function Home() {
                   <Link to="/guides" className="btn-primary" style={{ fontSize: '1rem', padding: '0.9rem 2rem' }}>
                     <Search size={17} /> Find a Guide
                   </Link>
-                  <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 1.8rem', borderRadius: 50, fontWeight: 600, fontSize: '1rem', color: 'white', border: '2px solid rgba(255,255,255,0.25)', textDecoration: 'none' }}>
+                  <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 1.8rem', borderRadius: 50, fontWeight: 700, fontSize: '1rem', color: 'var(--night)', border: '2px solid var(--border)', textDecoration: 'none', background: 'white' }}>
                     Dashboard <ArrowRight size={16} />
                   </Link>
                 </div>

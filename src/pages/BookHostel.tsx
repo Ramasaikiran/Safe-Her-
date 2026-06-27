@@ -196,7 +196,7 @@ export default function BookHostel() {
                 {loading ? 'Confirming...' : 'Confirm Reservation →'}
               </button>
               <p style={{ fontSize: '0.75rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-                Free cancellation up to 48 hours before check-in.
+                Free cancellation up to 12 hours before check-in.
               </p>
             </form>
           </div>

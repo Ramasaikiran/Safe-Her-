@@ -262,52 +262,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const completeRegistration = useCallback(async (regData: { full_name: string; phone: string; current_location?: string; role?: UserRole }) => {
-    if (!user) {
+    // Get user directly from Supabase auth — avoids React state race condition
+    // where user context hasn't updated yet after OTP verification
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
       return { error: { code: 'UNKNOWN', message: 'Session expired. Please verify your email again.' } as AuthError }
     }
-    const email = user.email
+    const email = currentUser.email
     if (!email) {
       return { error: { code: 'UNKNOWN', message: 'Email missing from session. Please try again.' } as AuthError }
     }
 
     try {
       const isGuide = regData.role === 'guide'
-      const { error } = await supabase.from('profiles').insert({
-        id: user.id,
+
+      // Upsert instead of insert — handles retries and partial registrations
+      const { error } = await supabase.from('profiles').upsert({
+        id: currentUser.id,
         email,
         phone: regData.phone.trim(),
         role: regData.role || 'traveller',
         full_name: regData.full_name,
         city: regData.current_location?.trim() || null,
         onboarding_completed: isGuide,
-      })
-      if (error) {
-        if (error.code === '23505') {
-          return { error: { code: 'ALREADY_EXISTS', message: 'This email is already registered.' } as AuthError }
-        }
-        return { error: friendlyAuthError(error) }
-      }
+      }, { onConflict: 'id' })
+
+      if (error) return { error: friendlyAuthError(error) }
 
       if (isGuide) {
-        // No moderation queue exists yet, so new guides go active
-        // immediately and are bookable right away. Worth adding a real
-        // review step before this matters at any real scale, given
-        // this is a safety-focused platform.
-        const { error: gpErr } = await supabase.from('guide_profiles').insert({
-          id: user.id,
+        const { error: gpErr } = await supabase.from('guide_profiles').upsert({
+          id: currentUser.id,
           hourly_rate: 99,
-          status: 'active',
+          status: 'pending',
+          kyc_status: 'not_started',
           city: regData.current_location?.trim() || null,
-        })
+        }, { onConflict: 'id' })
         if (gpErr) return { error: friendlyAuthError(gpErr) }
       }
 
-      const loaded = await loadProfile(user.id)
-      return { error: null, role: loaded?.role ?? regData.role ?? "traveller" }
+      const loaded = await loadProfile(currentUser.id)
+      return { error: null, role: loaded?.role ?? regData.role ?? 'traveller' }
     } catch (err) {
       return { error: friendlyAuthError(err) }
     }
-  }, [user, loadProfile])
+  }, [loadProfile])
 
   const updateProfile = useCallback(async (data: Partial<Profile>) => {
     if (!user) {
