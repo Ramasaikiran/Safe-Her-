@@ -75,7 +75,7 @@ export default function SafetyAssistant() {
         setMessages(prev => [...prev, { role: 'assistant', content: data?.error || 'No response. Please try again.' }])
       } else {
         if (data.city) setRagCity(data.city)
-        setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
       }
     } catch (err: any) {
       const msg = err?.message?.includes('fetch')
@@ -102,7 +102,7 @@ export default function SafetyAssistant() {
             <div>
               <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>AI Safety Assistant</h1>
               <p style={{ fontSize: '0.75rem', color: 'var(--sage)', margin: 0, fontWeight: 600 }}>
-                ● {ragCity ? `Using real SafeShe data for ${ragCity}` : 'Community-powered · Always learning'}
+                ● {ragCity ? `${ragCity} · RAG active` : 'Community-powered · No API costs'}
               </p>
             </div>
           </div>
