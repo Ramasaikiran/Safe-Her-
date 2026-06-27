@@ -79,7 +79,7 @@ export default function Register() {
       return
     }
 
-    const { error: regErr } = await completeRegistration({
+    const { error: regErr, role: confirmedRole } = await completeRegistration({
       full_name: fullName.trim(),
       phone,
       current_location: currentLocation.trim(),
@@ -91,7 +91,7 @@ export default function Register() {
       return
     }
     toast.success('Account created 🌸')
-    navigate(role === 'guide' ? '/guide-dashboard' : '/onboarding')
+    navigate(confirmedRole === 'guide' ? '/guide-dashboard' : '/onboarding')
   }
 
   const handleResend = async () => {

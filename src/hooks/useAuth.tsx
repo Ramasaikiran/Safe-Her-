@@ -302,8 +302,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (gpErr) return { error: friendlyAuthError(gpErr) }
       }
 
-      await loadProfile(user.id)
-      return { error: null }
+      const loaded = await loadProfile(user.id)
+      return { error: null, role: loaded?.role ?? regData.role ?? "traveller" }
     } catch (err) {
       return { error: friendlyAuthError(err) }
     }

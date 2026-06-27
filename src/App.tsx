@@ -43,9 +43,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function GuideRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading, profileLoaded } = useAuth()
-  if (loading || (user && !profileLoaded)) return <PageLoading />
-  if (!user) return <Navigate to="/login" replace />
-  if (profile && profile.role !== 'guide') return <Navigate to="/dashboard" replace />
+  if (loading || !user || (user && !profileLoaded)) return <PageLoading />
+  if (!profile) return <PageLoading />
+  if (profile.role !== 'guide') return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
