@@ -102,6 +102,8 @@ export default function Register() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true)
+    // Save intended role so AuthCallback can pick it up after redirect
+    sessionStorage.setItem('intended_role', role)
     const { error } = await loginWithGoogle()
     if (error) {
       setGoogleLoading(false)
