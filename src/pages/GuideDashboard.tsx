@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import {
@@ -103,12 +103,13 @@ function TripCard({ trip, traveller, onMarkCompleted }: { trip: TripBooking; tra
 export default function GuideDashboard() {
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [guideProfile, setGuideProfile] = useState<GuideProfileRow | null>(null)
   const [trips, setTrips] = useState<TripBooking[]>([])
   const [travellers, setTravellers] = useState<Record<string, TravellerInfo>>({})
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'overview')
   const [tripFilter, setTripFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all')
 
   // editable profile fields

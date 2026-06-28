@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Navigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import {
@@ -85,9 +85,9 @@ function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value
 // ── main component ─────────────────────────────────────────────────
 export default function AdminPanel() {
   const { user, profile, signOut } = useAuth()
+  const [searchParams] = useSearchParams()
 
-
-  const [tab, setTab] = useState<AdminTab>('overview')
+  const [tab, setTab] = useState<AdminTab>((searchParams.get('tab') as AdminTab) || 'overview')
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<Profile[]>([])
@@ -373,12 +373,12 @@ export default function AdminPanel() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.8rem' }}>
           <div>
             <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(232,68,90,0.8)', marginBottom: '0.2rem' }}>SafeShe · Admin</p>
-            <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(1.3rem,3vw,1.7rem)', fontWeight: 700, color: 'white', lineHeight: 1.2 }}>
+            <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(1.3rem,3vw,1.7rem)', fontWeight: 700, color: 'var(--night)', lineHeight: 1.2 }}>
               Control Panel
             </h1>
           </div>
           <div style={{ display: 'flex', gap: '0.6rem' }}>
-            <button onClick={loadAll} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.5rem 0.9rem', color: 'var(--earth)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+            <button onClick={loadAll} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'white', border: '1.5px solid var(--border)', borderRadius: 10, padding: '0.5rem 0.9rem', color: 'var(--earth)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
               <RefreshCw size={13} /> Refresh
             </button>
             <button onClick={async () => { await signOut(); window.location.href = '/' }} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(232,68,90,0.12)', border: '1px solid rgba(232,68,90,0.2)', borderRadius: 10, padding: '0.5rem 0.9rem', color: 'var(--rose)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>

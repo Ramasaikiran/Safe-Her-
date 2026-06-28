@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [payingId, setPayingId] = useState<string | null>(null)
   const [reportBooking, setReportBooking] = useState<Booking | null>(null)
   const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
 
   const displayName = profile?.full_name || 'Traveller'
   const firstName   = displayName.split(' ')[0]
@@ -426,6 +427,12 @@ export default function Dashboard() {
                           Cancel
                         </button>
                       )}
+                      {b.type === 'guide' && b.guide_id && b.status === 'completed' && (
+                        <button className="db-btn" onClick={() => setReviewBooking(b)}
+                          style={{ background: 'rgba(255,184,0,0.1)', color: '#B8860B', border: '1px solid rgba(255,184,0,0.3)' }}>
+                          ⭐ Rate guide
+                        </button>
+                      )}
                       {b.type === 'guide' && b.guide_id && (b.status === 'confirmed' || b.status === 'completed') && (
                         <button className="db-btn db-btn-report" onClick={() => setReportBooking(b)}>
                           <Flag size={11} /> Report
@@ -442,6 +449,16 @@ export default function Dashboard() {
 
       </div>
     </div>
+
+    {/* ── REVIEW MODAL ── */}
+    {reviewBooking && (
+      <ReviewModal
+        booking={reviewBooking}
+        onClose={() => setReviewBooking(null)}
+        onSubmitted={() => { setReviewBooking(null); fetchBookings() }}
+        userId={user?.id || ''}
+      />
+    )}
 
     {/* ── REPORT MODAL ── */}
     {reportBooking && (
@@ -504,6 +521,88 @@ function ReportModal({ onClose, onSubmit, submitting }: {
           <button onClick={() => onSubmit(reason, details)} disabled={submitting}
             style={{ flex: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', background: 'var(--rose)', color: 'white', border: 'none', borderRadius: 50, padding: '0.7rem 1.2rem', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
             <Flag size={13} /> {submitting ? 'Submitting…' : 'Submit report'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Review modal ───────────────────────────────────────────────────
+function ReviewModal({ booking, onClose, onSubmitted, userId }: {
+  booking: Booking
+  onClose: () => void
+  onSubmitted: () => void
+  userId: string
+}) {
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async () => {
+    if (!booking.guide_id) return
+    setSubmitting(true)
+    const { error } = await supabase.from('guide_reviews').insert({
+      guide_id: booking.guide_id,
+      reviewer_id: userId,
+      rating,
+      comment: comment.trim() || null,
+      city: null,
+    })
+    setSubmitting(false)
+    if (error) { toast.error('Could not submit review. Please try again.'); return }
+    // Update guide average rating
+    const { data: allReviews } = await supabase
+      .from('guide_reviews')
+      .select('rating')
+      .eq('guide_id', booking.guide_id)
+    if (allReviews && allReviews.length > 0) {
+      const avg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length
+      await supabase.from('guide_profiles').update({
+        rating: Math.round(avg * 10) / 10,
+        reviews_count: allReviews.length,
+      }).eq('id', booking.guide_id)
+    }
+    toast.success('Review submitted — thank you! 🌸')
+    onSubmitted()
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(26,15,10,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div className="card" style={{ maxWidth: 400, width: '100%', padding: '1.8rem' }}>
+        <h3 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>Rate your guide</h3>
+        <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '1.4rem', lineHeight: 1.5 }}>
+          Your honest review helps other women choose the right guide.
+        </p>
+
+        {/* Star rating */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.3rem', justifyContent: 'center' }}>
+          {[1, 2, 3, 4, 5].map(s => (
+            <button key={s} onClick={() => setRating(s)} type="button"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', fontSize: '2rem', lineHeight: 1, transition: 'transform 0.1s' }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+              {s <= rating ? '⭐' : '☆'}
+            </button>
+          ))}
+        </div>
+        <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '1.2rem', marginTop: '-0.8rem' }}>
+          {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][rating]}
+        </p>
+
+        <div className="form-group" style={{ marginBottom: '1.3rem' }}>
+          <label>Your experience <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(optional)</span></label>
+          <textarea rows={3} value={comment} onChange={e => setComment(e.target.value)}
+            placeholder="What made this guide great? Any tips for others?" maxLength={400} />
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.65rem' }}>
+          <button onClick={onClose} className="btn-outline" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting}>
+            Skip
+          </button>
+          <button onClick={handleSubmit} disabled={submitting}
+            style={{ flex: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', background: '#FFB800', color: '#1A0A10', border: 'none', borderRadius: 50, padding: '0.7rem 1.2rem', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+            {submitting ? 'Submitting…' : '⭐ Submit review'}
           </button>
         </div>
       </div>
