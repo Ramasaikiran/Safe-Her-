@@ -2,7 +2,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
   Shield, Home, Search, BedDouble, LayoutDashboard, LogOut,
-  AlertTriangle, ShieldCheck, Compass, Star, TrendingUp, User
+  AlertTriangle, ShieldCheck, Compass, Star, TrendingUp, User,
+  Users, UserCheck, Briefcase
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -11,7 +12,8 @@ export default function Navbar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const isGuide = profile?.role === 'guide'
-  const dashboardPath = isGuide ? '/guide-dashboard' : '/dashboard'
+  const isAdmin = profile?.role === 'admin'
+  const dashboardPath = isAdmin ? '/admin' : isGuide ? '/guide-dashboard' : '/dashboard'
 
   const handleSignOut = async () => {
     await signOut()
@@ -37,7 +39,14 @@ export default function Navbar() {
     { to: '/sos',                        label: 'SOS',       icon: <AlertTriangle size={17} />, danger: true },
   ]
 
-  const navLinks = isGuide ? guideLinks : travellerLinks
+  // ── Admin nav links
+  const adminLinks = [
+    { to: '/admin',            label: 'Overview', icon: <TrendingUp size={17} /> },
+    { to: '/admin?tab=users',  label: 'Users',    icon: <Users size={17} /> },
+    { to: '/admin?tab=guides', label: 'Guides',   icon: <UserCheck size={17} /> },
+  ]
+
+  const navLinks = isAdmin ? adminLinks : isGuide ? guideLinks : travellerLinks
 
   // ── Mobile bottom tabs
   const travellerTabs = [
@@ -58,7 +67,16 @@ export default function Navbar() {
     { to: '/guide-dashboard?tab=kyc',     label: 'KYC',     icon: <ShieldCheck size={20} /> },
   ]
 
-  const mobileTabs = isGuide ? guideTabs : travellerTabs
+  const adminTabs = [
+    { to: '/admin',                label: 'Overview', icon: <TrendingUp size={20} /> },
+    { to: '/admin?tab=users',      label: 'Users',    icon: <Users size={20} /> },
+    { to: '/admin?tab=guides',     label: 'Guides',   icon: <UserCheck size={20} /> },
+    { to: '/admin?tab=bookings',   label: 'Bookings', icon: <Briefcase size={20} /> },
+    { to: '/admin?tab=reports',    label: 'Reports',  icon: <AlertTriangle size={20} />, danger: true },
+    { to: '/admin',                label: 'Me',       icon: <LayoutDashboard size={20} /> },
+  ]
+
+  const mobileTabs = isAdmin ? adminTabs : isGuide ? guideTabs : travellerTabs
 
   const isActiveTab = (to: string) => {
     const path = to.split('?')[0]
@@ -87,6 +105,11 @@ export default function Navbar() {
                 GUIDE
               </span>
             )}
+            {isAdmin && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(232,68,90,0.15)', color: 'var(--rose)', padding: '0.15rem 0.5rem', borderRadius: 20, marginLeft: '0.3rem', letterSpacing: '0.04em' }}>
+                ADMIN
+              </span>
+            )}
           </Link>
 
           {/* Centre links */}
@@ -97,10 +120,10 @@ export default function Navbar() {
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
                   padding: '0.5rem 1.1rem', borderRadius: 50,
                   fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
-                  background: l.danger
+                  background: (l as any).danger
                     ? active(l.to) ? 'var(--rose)' : 'var(--blush)'
                     : active(l.to) ? 'var(--blush)' : 'transparent',
-                  color: l.danger
+                  color: (l as any).danger
                     ? active(l.to) ? 'white' : 'var(--rose)'
                     : active(l.to) ? 'var(--rose)' : 'var(--earth)',
                   transition: 'all 0.2s',
@@ -123,7 +146,7 @@ export default function Navbar() {
                   fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
                   border: '1.5px solid var(--border)',
                 }}>
-                  <LayoutDashboard size={15} /> {isGuide ? 'Guide Dashboard' : 'My Dashboard'}
+                  <LayoutDashboard size={15} /> {isAdmin ? 'Admin Panel' : isGuide ? 'Guide Dashboard' : 'My Dashboard'}
                 </Link>
                 <button onClick={handleSignOut} style={{
                   display: 'flex', alignItems: 'center', gap: '0.35rem',

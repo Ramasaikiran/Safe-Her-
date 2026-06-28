@@ -237,7 +237,7 @@ export default function AdminPanel() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0F0A07', paddingTop: '5rem' }}>
+    <div style={{ minHeight: '100vh', background: '#F4F6F8', paddingTop: '5rem' }}>
       <style>{`
         .adm-shell { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
         @media (min-width: 640px) { .adm-shell { padding: 2rem 2rem 4rem; } }
@@ -245,7 +245,7 @@ export default function AdminPanel() {
         .adm-tabs {
           display: flex; gap: 0.25rem; overflow-x: auto;
           -ms-overflow-style: none; scrollbar-width: none;
-          background: rgba(255,255,255,0.04); border-radius: 14px;
+          background: rgba(0,0,0,0.04); border-radius: 14px;
           padding: 0.3rem; margin-bottom: 1.8rem;
         }
         .adm-tabs::-webkit-scrollbar { display: none; }
@@ -255,13 +255,13 @@ export default function AdminPanel() {
           font-size: 0.83rem; font-weight: 600;
           font-family: 'DM Sans', sans-serif;
           background: none; border: none; cursor: pointer;
-          color: rgba(255,255,255,0.5); white-space: nowrap;
+          color: rgba(30,20,15,0.45); white-space: nowrap;
           transition: all 0.16s;
         }
-        .adm-tab:hover { color: rgba(255,255,255,0.8); }
-        .adm-tab.active { background: rgba(232,68,90,0.18); color: #FF8FA0; }
+        .adm-tab:hover { color: rgba(30,20,15,0.8); }
+        .adm-tab.active { background: rgba(232,68,90,0.1); color: var(--rose); }
         .adm-badge {
-          background: var(--rose); color: white;
+          background: var(--rose); color: var(--night);
           font-size: 0.65rem; font-weight: 800;
           padding: 0.1rem 0.42rem; border-radius: 20px; min-width: 18px;
           text-align: center;
@@ -275,8 +275,8 @@ export default function AdminPanel() {
         @media (min-width: 640px)  { .adm-stats-grid { grid-template-columns: repeat(4, 1fr); } }
 
         .adm-card {
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: white;
+          border: 1px solid rgba(0,0,0,0.08);
           border-radius: 16px; overflow: hidden;
         }
         .adm-table-wrap { overflow-x: auto; }
@@ -287,17 +287,17 @@ export default function AdminPanel() {
         .adm-table th {
           padding: 0.75rem 1rem; text-align: left;
           font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
-          text-transform: uppercase; color: rgba(255,255,255,0.35);
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          text-transform: uppercase; color: rgba(30,20,15,0.4);
+          border-bottom: 1px solid rgba(0,0,0,0.06);
           white-space: nowrap;
         }
         .adm-table td {
-          padding: 0.8rem 1rem; color: rgba(255,255,255,0.82);
-          border-bottom: 1px solid rgba(255,255,255,0.05);
+          padding: 0.8rem 1rem; color: rgba(30,20,15,0.85);
+          border-bottom: 1px solid rgba(0,0,0,0.05);
           vertical-align: middle;
         }
         .adm-table tr:last-child td { border-bottom: none; }
-        .adm-table tr:hover td { background: rgba(255,255,255,0.03); }
+        .adm-table tr:hover td { background: rgba(0,0,0,0.02); }
 
         .adm-search-row {
           display: flex; gap: 0.6rem; align-items: center;
@@ -307,30 +307,30 @@ export default function AdminPanel() {
           flex: 1; min-width: 180px;
           padding: 0.65rem 1rem 0.65rem 2.4rem;
           border-radius: 10px;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.06);
-          color: rgba(255,255,255,0.9); font-size: 0.85rem;
+          border: 1px solid rgba(0,0,0,0.1);
+          background: white;
+          color: rgba(30,20,15,0.9); font-size: 0.85rem;
           font-family: 'DM Sans', sans-serif; outline: none;
           transition: border-color 0.18s;
         }
-        .adm-search::placeholder { color: rgba(255,255,255,0.3); }
+        .adm-search::placeholder { color: rgba(30,20,15,0.35); }
         .adm-search:focus { border-color: rgba(232,68,90,0.5); }
         .adm-search-wrap { position: relative; flex: 1; min-width: 180px; }
         .adm-search-icon {
           position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-          color: rgba(255,255,255,0.3); pointer-events: none; display: flex;
+          color: rgba(30,20,15,0.35); pointer-events: none; display: flex;
         }
 
         .adm-filter-pill {
           padding: 0.45rem 0.85rem; border-radius: 50px;
           font-size: 0.76rem; font-weight: 600;
           font-family: 'DM Sans', sans-serif;
-          border: 1px solid rgba(255,255,255,0.12);
-          background: rgba(255,255,255,0.06);
-          color: rgba(255,255,255,0.5); cursor: pointer;
+          border: 1px solid rgba(0,0,0,0.1);
+          background: white;
+          color: rgba(30,20,15,0.45); cursor: pointer;
           transition: all 0.16s; white-space: nowrap;
         }
-        .adm-filter-pill.active { background: rgba(232,68,90,0.2); border-color: rgba(232,68,90,0.4); color: #FF8FA0; }
+        .adm-filter-pill.active { background: rgba(232,68,90,0.1); border-color: var(--rose); color: var(--rose); }
 
         .adm-action-btn {
           padding: 0.3rem 0.7rem; border-radius: 8px; border: none;
@@ -338,22 +338,22 @@ export default function AdminPanel() {
           font-family: 'DM Sans', sans-serif; transition: all 0.15s;
           display: inline-flex; align-items: center; gap: 0.3rem;
         }
-        .adm-btn-approve { background: rgba(122,158,126,0.2); color: #9DC2A0; }
+        .adm-btn-approve { background: rgba(122,158,126,0.2); color: var(--sage); }
         .adm-btn-approve:hover { background: rgba(122,158,126,0.35); }
-        .adm-btn-suspend { background: rgba(232,68,90,0.15); color: #FF8FA0; }
+        .adm-btn-suspend { background: rgba(232,68,90,0.15); color: var(--rose); }
         .adm-btn-suspend:hover { background: rgba(232,68,90,0.28); }
-        .adm-btn-reject  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
-        .adm-btn-reject:hover  { background: rgba(255,255,255,0.12); }
+        .adm-btn-reject  { background: white; color: var(--muted); }
+        .adm-btn-reject:hover  { background: rgba(0,0,0,0.06); }
 
         .adm-section-title {
           font-family: 'Playfair Display', serif;
           font-size: 1rem; font-weight: 700;
-          color: rgba(255,255,255,0.85); margin-bottom: 0.9rem;
+          color: var(--night); margin-bottom: 0.9rem;
         }
 
         .adm-empty {
           padding: 2.5rem; text-align: center;
-          color: rgba(255,255,255,0.3); font-size: 0.85rem;
+          color: rgba(30,20,15,0.35); font-size: 0.85rem;
         }
 
         .adm-rev-hero {
@@ -378,10 +378,10 @@ export default function AdminPanel() {
             </h1>
           </div>
           <div style={{ display: 'flex', gap: '0.6rem' }}>
-            <button onClick={loadAll} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.5rem 0.9rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+            <button onClick={loadAll} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.5rem 0.9rem', color: 'var(--earth)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
               <RefreshCw size={13} /> Refresh
             </button>
-            <button onClick={async () => { await signOut(); window.location.href = '/' }} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(232,68,90,0.12)', border: '1px solid rgba(232,68,90,0.2)', borderRadius: 10, padding: '0.5rem 0.9rem', color: '#FF8FA0', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+            <button onClick={async () => { await signOut(); window.location.href = '/' }} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(232,68,90,0.12)', border: '1px solid rgba(232,68,90,0.2)', borderRadius: 10, padding: '0.5rem 0.9rem', color: 'var(--rose)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
               <LogOut size={13} /> Sign out
             </button>
           </div>
@@ -420,14 +420,38 @@ export default function AdminPanel() {
               <StatCard icon={<Clock size={18} color="#C49A72" />}     value={stats.activeBookings} label="Confirmed trips"   accent="#C49A72" />
               <StatCard icon={<ShieldCheck size={18} color="#C49A72" />} value={stats.pendingKyc}  label="KYC pending"        accent="#C49A72" />
               <StatCard icon={<AlertTriangle size={18} color="#E8445A" />} value={stats.openReports} label="Reports"          accent="#E8445A" />
-              <StatCard icon={<Clock size={18} color="#7A9E7E" />}     value={stats.pendingGuides} label="Guides awaiting approval" accent="#7A9E7E" />
-              <StatCard icon={<IndianRupee size={18} color="#7A9E7E" />} value={bookings.filter(b => b.payment_status === 'pending').length} label="Unpaid bookings" accent="#E8445A" />
+              <StatCard icon={<Clock size={18} color="#C49A72" />}     value={stats.activeBookings} label="Confirmed"      accent="#C49A72" />
+              <StatCard icon={<ShieldCheck size={18} color="#C49A72" />} value={stats.pendingKyc}  label="KYC Pending"    accent="#C49A72" />
+              <StatCard icon={<AlertTriangle size={18} color="#E8445A" />} value={stats.openReports} label="Reports"      accent="#E8445A" />
+              <StatCard icon={<Clock size={18} color="#7A9E7E" />}     value={stats.pendingGuides} label="Pending Guides" accent="#7A9E7E" />
+              <StatCard icon={<IndianRupee size={18} color="#E8445A" />} value={bookings.filter(b => b.payment_status === 'pending').length} label="Unpaid" accent="#E8445A" />
             </div>
+
+            {/* ── Pending guides alert — highest priority action ── */}
+            {stats.pendingGuides > 0 && (
+              <button onClick={() => setTab('guides')}
+                style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', marginBottom: '1.2rem' }}>
+                <div style={{ background: 'rgba(232,68,90,0.12)', border: '1px solid rgba(232,68,90,0.3)', borderRadius: 14, padding: '1rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--rose)', flexShrink: 0, animation: 'pulse-soft 1.5s infinite' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--rose)' }}>
+                      {stats.pendingGuides} guide{stats.pendingGuides > 1 ? 's' : ''} waiting for approval
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.15rem' }}>
+                      Tap to review and approve or reject
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--rose)', background: 'rgba(232,68,90,0.2)', padding: '0.3rem 0.75rem', borderRadius: 20, flexShrink: 0 }}>
+                    Review →
+                  </span>
+                </div>
+              </button>
+            )}
 
             {/* Quick KYC queue */}
             {guides.filter(g => g.kyc_status === 'pending').length > 0 && (
               <>
-                <h2 className="adm-section-title" style={{ color: 'rgba(255,255,255,0.8)' }}>KYC pending review</h2>
+                <h2 className="adm-section-title" style={{ color: 'var(--night)' }}>KYC pending review</h2>
                 <div className="adm-card" style={{ marginBottom: '1.4rem' }}>
                   <div className="adm-table-wrap">
                     <table className="adm-table">
@@ -436,7 +460,7 @@ export default function AdminPanel() {
                         {guides.filter(g => g.kyc_status === 'pending').map(g => (
                           <tr key={g.id}>
                             <td style={{ fontWeight: 600 }}>{g.profiles?.full_name || '—'}</td>
-                            <td style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem' }}>{g.profiles?.email || '—'}</td>
+                            <td style={{ color: 'var(--muted)', fontSize: '0.78rem' }}>{g.profiles?.email || '—'}</td>
                             <td>{g.city || '—'}</td>
                             <td>••••{g.kyc_aadhaar_last4 || '??'}</td>
                             <td>
@@ -461,7 +485,7 @@ export default function AdminPanel() {
             {/* Quick reports queue */}
             {reports.length > 0 && (
               <>
-                <h2 className="adm-section-title" style={{ color: 'rgba(255,255,255,0.8)' }}>Latest reports</h2>
+                <h2 className="adm-section-title" style={{ color: 'var(--night)' }}>Latest reports</h2>
                 <div className="adm-card">
                   <div className="adm-table-wrap">
                     <table className="adm-table">
@@ -475,7 +499,7 @@ export default function AdminPanel() {
                               <td>{r.reporter?.full_name || '—'}</td>
                               <td style={{ fontWeight: 600 }}>{r.guide?.full_name || '—'}</td>
                               <td><Chip label={r.reason.replace('_', ' ')} color="#FF8FA0" bg="rgba(232,68,90,0.15)" /></td>
-                              <td style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>{new Date(r.created_at).toLocaleDateString('en-IN')}</td>
+                              <td style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>{new Date(r.created_at).toLocaleDateString('en-IN')}</td>
                               <td>{guide && <Chip label={guide.status} color={gs.color} bg={gs.bg} />}</td>
                             </tr>
                           )
@@ -497,7 +521,7 @@ export default function AdminPanel() {
                 <span className="adm-search-icon"><Search size={14} /></span>
                 <input className="adm-search" placeholder="Search name, email, city…" value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-              <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)' }}>{filteredUsers.length} users</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{filteredUsers.length} users</span>
             </div>
             <div className="adm-card">
               {filteredUsers.length === 0
@@ -510,21 +534,21 @@ export default function AdminPanel() {
                         {filteredUsers.map(u => (
                           <tr key={u.id}>
                             <td style={{ fontWeight: 600 }}>{u.full_name}</td>
-                            <td style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem' }}>{u.email}</td>
+                            <td style={{ color: 'var(--muted)', fontSize: '0.78rem' }}>{u.email}</td>
                             <td>
                               <Chip
                                 label={u.role}
-                                color={u.role === 'admin' ? '#FF8FA0' : u.role === 'guide' ? '#9DC2A0' : 'rgba(255,255,255,0.55)'}
-                                bg={u.role === 'admin' ? 'rgba(232,68,90,0.15)' : u.role === 'guide' ? 'rgba(122,158,126,0.15)' : 'rgba(255,255,255,0.07)'}
+                                color={u.role === 'admin' ? '#FF8FA0' : u.role === 'guide' ? '#9DC2A0' : 'var(--earth)'}
+                                bg={u.role === 'admin' ? 'rgba(232,68,90,0.15)' : u.role === 'guide' ? 'rgba(122,158,126,0.15)' : 'rgba(0,0,0,0.05)'}
                               />
                             </td>
                             <td>{u.city || '—'}</td>
                             <td>
                               {u.onboarding_completed
                                 ? <span style={{ color: '#9DC2A0', fontSize: '0.75rem', fontWeight: 700 }}>✓ Yes</span>
-                                : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>No</span>}
+                                : <span style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>No</span>}
                             </td>
-                            <td style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
+                            <td style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>
                               {new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </td>
                           </tr>
@@ -566,11 +590,11 @@ export default function AdminPanel() {
                             <tr key={g.id}>
                               <td>
                                 <div style={{ fontWeight: 600 }}>{g.profiles?.full_name || '—'}</div>
-                                <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.35)' }}>{g.profiles?.email || '—'}</div>
+                                <div style={{ fontSize: '0.73rem', color: 'var(--muted)' }}>{g.profiles?.email || '—'}</div>
                               </td>
                               <td>{g.city || '—'}</td>
                               <td>₹{g.hourly_rate}/hr</td>
-                              <td>⭐ {g.rating?.toFixed(1) || '—'} <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>({g.reviews_count})</span></td>
+                              <td>⭐ {g.rating?.toFixed(1) || '—'} <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>({g.reviews_count})</span></td>
                               <td><Chip label={g.kyc_status.replace('_',' ')} color={kyc.color} bg={kyc.bg} /></td>
                               <td><Chip label={g.status} color={st.color} bg={st.bg} /></td>
                               <td>
@@ -632,20 +656,20 @@ export default function AdminPanel() {
                             <tr key={b.id}>
                               <td>
                                 <div style={{ fontWeight: 600 }}>{b.traveller?.full_name || '—'}</div>
-                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>{b.traveller?.email || '—'}</div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{b.traveller?.email || '—'}</div>
                               </td>
-                              <td><Chip label={b.type} color="rgba(255,255,255,0.6)" bg="rgba(255,255,255,0.07)" /></td>
+                              <td><Chip label={b.type} color="var(--earth)" bg="rgba(0,0,0,0.05)" /></td>
                               <td>{b.city || '—'}</td>
-                              <td style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                              <td style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
                                 {new Date(b.booking_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                 {b.hours ? ` · ${b.hours}h` : ''}
                               </td>
-                              <td style={{ fontWeight: 700, color: '#FF8FA0' }}>₹{b.amount.toLocaleString('en-IN')}</td>
+                              <td style={{ fontWeight: 700, color: 'var(--rose)' }}>₹{b.amount.toLocaleString('en-IN')}</td>
                               <td><Chip label={b.status} color={st.color} bg={st.bg} /></td>
                               <td>
                                 <Chip
                                   label={b.payment_status}
-                                  color={paid ? '#9DC2A0' : 'rgba(255,255,255,0.4)'}
+                                  color={paid ? '#9DC2A0' : 'var(--muted)'}
                                   bg={paid ? 'rgba(122,158,126,0.15)' : 'rgba(255,255,255,0.06)'}
                                 />
                               </td>
@@ -664,7 +688,7 @@ export default function AdminPanel() {
         {tab === 'reports' && (
           <>
             <div className="adm-search-row">
-              <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{reports.length} reports total</span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--muted)', fontWeight: 600 }}>{reports.length} reports total</span>
             </div>
             <div className="adm-card">
               {reports.length === 0
@@ -681,15 +705,15 @@ export default function AdminPanel() {
                             <tr key={r.id}>
                               <td>
                                 <div style={{ fontWeight: 600 }}>{r.reporter?.full_name || '—'}</div>
-                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>{r.reporter?.email || '—'}</div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{r.reporter?.email || '—'}</div>
                               </td>
-                              <td style={{ fontWeight: 600, color: '#FF8FA0' }}>{r.guide?.full_name || '—'}</td>
+                              <td style={{ fontWeight: 600, color: 'var(--rose)' }}>{r.guide?.full_name || '—'}</td>
                               <td><Chip label={r.reason.replace(/_/g,' ')} color="#FF8FA0" bg="rgba(232,68,90,0.15)" /></td>
-                              <td style={{ maxWidth: 200, fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>
+                              <td style={{ maxWidth: 200, fontSize: '0.78rem', color: 'var(--muted)' }}>
                                 {r.details ? r.details.slice(0, 60) + (r.details.length > 60 ? '…' : '') : '—'}
                               </td>
                               <td>{guide && <Chip label={guide.status} color={gs.color} bg={gs.bg} />}</td>
-                              <td style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
+                              <td style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                                 {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </td>
                               <td>
@@ -699,7 +723,7 @@ export default function AdminPanel() {
                                   </button>
                                 )}
                                 {guide && guide.status === 'suspended' && (
-                                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>Already suspended</span>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Already suspended</span>
                                 )}
                               </td>
                             </tr>
