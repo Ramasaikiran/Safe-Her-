@@ -176,9 +176,28 @@ export default function AdminPanel() {
   const updateGuideStatus = async (guideId: string, status: string) => {
     setActioning(guideId)
     const { error } = await supabase.from('guide_profiles').update({ status }).eq('id', guideId)
+    if (error) { toast.error('Could not update guide status.'); setActioning(null); return }
+
+    // Send email notification to the guide
+    const guide = guides.find(g => g.id === guideId)
+    if (guide?.profiles?.email) {
+      try {
+        await supabase.functions.invoke('notify-guide', {
+          body: {
+            to: guide.profiles.email,
+            name: guide.profiles.full_name || 'Guide',
+            status,
+          }
+        })
+      } catch (e) {
+        console.warn('Email notification failed:', e)
+        // Non-fatal — status update already succeeded
+      }
+    }
+
     setActioning(null)
-    if (error) { toast.error('Could not update guide status.'); return }
-    toast.success(`Guide ${status}`)
+    const label = status === 'active' ? 'approved' : status
+    toast.success(`Guide ${label} — email sent`)
     loadAll()
   }
 
