@@ -288,7 +288,7 @@ export default function Register() {
 
           {step === 'details' && (
             <div style={{ textAlign: 'center', marginTop: '1.6rem', paddingTop: '1.6rem', borderTop: '1px solid var(--border)' }}>
-              <p style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>
+              <p style={{ fontSize: '1rem', color: 'var(--earth)' }}>
                 Already have an account?{' '}
                 <Link to="/login" style={{ color: 'var(--rose)', fontWeight: 600, textDecoration: 'none' }}>Sign in →</Link>
               </p>
