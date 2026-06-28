@@ -355,9 +355,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: { code: 'NOT_FOUND', message: 'No account found with this email. Please sign up first.' } }
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
+      // No redirectTo — Supabase sends 6-digit OTP instead of magic link
+      // The send-email Auth Hook delivers it via Resend
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
       if (error) return { error: friendlyAuthError(error) }
       return { error: null }
     } catch (err) {
