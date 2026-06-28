@@ -62,8 +62,14 @@ export default function Home() {
     return () => clearInterval(t)
   }, [])
 
-  const handleGoogle = async () => {
+  const [showRolePicker, setShowRolePicker] = useState(false)
+
+  const handleGoogle = () => setShowRolePicker(true)
+
+  const handleGoogleWithRole = async (role: 'traveller' | 'guide') => {
+    setShowRolePicker(false)
     setGoogleLoading(true)
+    sessionStorage.setItem('intended_role', role)
     await loginWithGoogle()
     setGoogleLoading(false)
   }
@@ -490,6 +496,45 @@ export default function Home() {
           <button onClick={handleGoogle} disabled={googleLoading} className="btn-primary" style={{ flexShrink: 0, padding: '0.65rem 1.3rem', fontSize: '0.85rem' }}>
             {googleLoading ? 'Loading…' : 'Join Free'}
           </button>
+        </div>
+      )}
+
+      {/* ── ROLE PICKER MODAL ───────────────────────────────────── */}
+      {showRolePicker && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(26,15,10,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.2rem' }} onClick={() => setShowRolePicker(false)}>
+          <div className="card" style={{ maxWidth: 400, width: '100%', padding: '2rem' }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.3rem', fontWeight: 700, color: 'var(--night)', marginBottom: '0.4rem', textAlign: 'center' }}>
+              I am joining as…
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'center', marginBottom: '1.6rem', lineHeight: 1.5 }}>
+              This helps us set up your account correctly.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button onClick={() => handleGoogleWithRole('traveller')}
+                style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.2rem', borderRadius: 14, border: '2px solid var(--border)', background: 'var(--warm)', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sage)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                <span style={{ fontSize: '2rem', flexShrink: 0 }}>✈️</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--night)', marginBottom: '0.2rem' }}>Traveller</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.4 }}>I want to find guides, safe stays and travel safely</div>
+                </div>
+              </button>
+              <button onClick={() => handleGoogleWithRole('guide')}
+                style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.2rem', borderRadius: 14, border: '2px solid var(--border)', background: 'var(--warm)', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--rose)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                <span style={{ fontSize: '2rem', flexShrink: 0 }}>🧭</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--night)', marginBottom: '0.2rem' }}>Guide</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.4 }}>I want to offer guide services and earn money</div>
+                </div>
+              </button>
+            </div>
+            <button onClick={() => setShowRolePicker(false)} style={{ display: 'block', width: '100%', marginTop: '1.2rem', background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
