@@ -57,6 +57,11 @@ export default function Home() {
   }, [])
 
   // Auto-rotate testimonials
+  // Redirect logged-in users to their correct dashboard
+  useEffect(() => {
+    if (profile?.role === 'admin') navigate('/admin', { replace: true })
+  }, [profile])
+
   useEffect(() => {
     const t = setInterval(() => setActiveTestimonial(i => (i + 1) % TESTIMONIALS.length), 4000)
     return () => clearInterval(t)
@@ -163,7 +168,7 @@ export default function Home() {
 
             {/* Left — copy: guide hero OR traveller hero */}
             <div>
-              {user && profile?.role === 'guide' ? (
+              {user && profile?.role === 'guide' || profile?.role === 'admin' ? (
                 <>
                   {/* ── GUIDE HERO ── */}
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(122,158,126,0.1)', border: '1.5px solid rgba(122,158,126,0.25)', borderRadius: 20, padding: '0.3rem 0.9rem', marginBottom: '1.2rem', fontSize: '0.78rem', fontWeight: 700, color: 'var(--sage)' }}>
@@ -200,7 +205,13 @@ export default function Home() {
 
               {/* CTAs */}
               {user ? (
-                profile?.role === 'guide' ? (
+                profile?.role === 'admin' ? (
+                  <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                    <Link to="/admin" className="btn-primary" style={{ fontSize: '1rem', padding: '0.9rem 2rem' }}>
+                      ⚙️ Admin Panel
+                    </Link>
+                  </div>
+                ) : profile?.role === 'guide' ? (
                   <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
                     <Link to="/guide-dashboard" className="btn-primary" style={{ fontSize: '1rem', padding: '0.9rem 2rem' }}>
                       <Compass size={17} /> Guide Dashboard
@@ -246,7 +257,7 @@ export default function Home() {
               )}
 
               {/* Trust signals — travellers only */}
-              {(!user || profile?.role !== 'guide') && (
+              {(!user || profile?.role !== 'guide' && profile?.role !== 'admin') && (
                 <div className="cro-trust-row">
                   {['Aadhaar-verified guides', '24/7 SOS support', 'Women-only spaces', 'No spam ever'].map(t => (
                     <div key={t} className="cro-trust-item">
@@ -257,7 +268,7 @@ export default function Home() {
               )}
 
               {/* Stats bar — travellers only */}
-              {(!user || profile?.role !== 'guide') && (
+              {(!user || profile?.role !== 'guide' && profile?.role !== 'admin') && (
                 <div className="cro-stat-bar">
                   {STATS.map(s => (
                     <div key={s.label} className="cro-stat-item">
@@ -270,7 +281,7 @@ export default function Home() {
             </div>
 
             {/* Right column — guide cards OR traveller social proof */}
-            {user && profile?.role === 'guide' ? (
+            {user && profile?.role === 'guide' || profile?.role === 'admin' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                 {/* Guide stat cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -352,7 +363,7 @@ export default function Home() {
       </section>
 
       {/* ── GUIDE QUICK LINKS — only for logged-in guides ──────────── */}
-      {user && profile?.role === 'guide' && (
+      {user && profile?.role === 'guide' || profile?.role === 'admin' && (
         <section style={{ padding: '3rem 0', background: 'white' }}>
           <div className="container">
             <h2 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--night)', marginBottom: '1.2rem' }}>Quick access</h2>
@@ -381,7 +392,7 @@ export default function Home() {
       )}
 
       {/* Traveller-only sections — guides skip straight to guide dashboard */}
-      {(!user || profile?.role !== 'guide') && <>
+      {(!user || profile?.role !== 'guide' && profile?.role !== 'admin') && <>
 
       {/* ── CITY SAFETY SCORES TEASER ─────────────────────────────── */}      <section style={{ padding: '3.5rem 0', background: 'white', borderBottom: '1px solid var(--border)' }}>
         <div className="container">
