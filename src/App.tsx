@@ -36,8 +36,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading, profileLoaded } = useAuth()
   if (loading || (user && !profileLoaded)) return <PageLoading />
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.role === 'guide') return <Navigate to="/guide-dashboard" replace />
+  if (profile?.role === 'guide')  return <Navigate to="/guide-dashboard" replace />
+  if (profile?.role === 'admin')  return <Navigate to="/admin" replace />
   if (profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />
+  return <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading, profileLoaded } = useAuth()
+  if (loading || !user || (user && !profileLoaded)) return <PageLoading />
+  if (!profile) return <PageLoading />
+  if (profile.role !== 'admin') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -82,7 +91,7 @@ function AppRoutes() {
         <Route path="/safety/:city" element={<CitySafety />} />
         <Route path="/track/:tripId" element={<TrackTrip />} />
         <Route path="/payment-status/:bookingId" element={<PaymentStatus />} />
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
       </Routes>
     </>
   )

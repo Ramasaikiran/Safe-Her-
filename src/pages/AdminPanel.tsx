@@ -86,8 +86,6 @@ function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value
 export default function AdminPanel() {
   const { user, profile, signOut } = useAuth()
 
-  // Guard: only admin role gets in
-  if (!user || profile?.role !== 'admin') return <Navigate to="/" replace />
 
   const [tab, setTab] = useState<AdminTab>('overview')
   const [loading, setLoading] = useState(true)
