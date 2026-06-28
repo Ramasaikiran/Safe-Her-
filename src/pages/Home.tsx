@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Shield, Search, ArrowRight, CheckCircle, MapPin, Star, Users, Zap, ChevronRight, Quote } from 'lucide-react'
+import { Shield, Search, ArrowRight, CheckCircle, MapPin, Star, Users, Zap, ChevronRight, Quote, Compass } from 'lucide-react'
 import { GUIDES, HOSTELS } from '../data/seed'
 
 // ── Real-feeling social proof numbers ──────────────────────────────
@@ -43,7 +43,7 @@ const CITY_PREVIEWS = [
 ]
 
 export default function Home() {
-  const { user, loginWithGoogle } = useAuth()
+  const { user, profile, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showStickyBar, setShowStickyBar] = useState(false)
@@ -183,14 +183,22 @@ export default function Home() {
 
               {/* CTAs */}
               {user ? (
-                <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
-                  <Link to="/guides" className="btn-primary" style={{ fontSize: '1rem', padding: '0.9rem 2rem' }}>
-                    <Search size={17} /> Find a Guide
-                  </Link>
-                  <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 1.8rem', borderRadius: 50, fontWeight: 700, fontSize: '1rem', color: 'var(--night)', border: '2px solid var(--border)', textDecoration: 'none', background: 'white' }}>
-                    Dashboard <ArrowRight size={16} />
-                  </Link>
-                </div>
+                profile?.role === 'guide' ? (
+                  <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                    <Link to="/guide-dashboard" className="btn-primary" style={{ fontSize: '1rem', padding: '0.9rem 2rem' }}>
+                      <Compass size={17} /> Guide Dashboard
+                    </Link>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                    <Link to="/guides" className="btn-primary" style={{ fontSize: '1rem', padding: '0.9rem 2rem' }}>
+                      <Search size={17} /> Find a Guide
+                    </Link>
+                    <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 1.8rem', borderRadius: 50, fontWeight: 700, fontSize: '1rem', color: 'var(--night)', border: '2px solid var(--border)', textDecoration: 'none', background: 'white' }}>
+                      Dashboard <ArrowRight size={16} />
+                    </Link>
+                  </div>
+                )
               ) : (
                 <>
                   {/* Google — primary */}
@@ -287,8 +295,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CITY SAFETY SCORES TEASER ─────────────────────────────── */}
-      <section style={{ padding: '3.5rem 0', background: 'white', borderBottom: '1px solid var(--border)' }}>
+      {/* ── GUIDE QUICK LINKS — only for logged-in guides ──────────── */}
+      {user && profile?.role === 'guide' && (
+        <section style={{ padding: '3rem 0', background: 'white' }}>
+          <div className="container">
+            <h2 style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--night)', marginBottom: '1.2rem' }}>Quick access</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '0.85rem' }}>
+              {[
+                { icon: '📊', label: 'Your Dashboard',   sub: 'Earnings, trips, availability', link: '/guide-dashboard',          color: 'var(--rose)' },
+                { icon: '📅', label: 'Manage Trips',     sub: 'View pending & confirmed',      link: '/guide-dashboard?tab=trips', color: 'var(--sage)' },
+                { icon: '👤', label: 'Edit Profile',     sub: 'Rate, bio, specialties',        link: '/guide-dashboard?tab=profile', color: 'var(--sand)' },
+                { icon: '🪪', label: 'Verify Identity',  sub: 'Complete Aadhaar e-KYC',        link: '/guide-dashboard?tab=kyc',   color: 'var(--rose)' },
+              ].map(a => (
+                <Link key={a.label} to={a.link} style={{ textDecoration: 'none' }}>
+                  <div style={{ background: 'var(--warm)', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.1rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.9rem', transition: 'border-color 0.15s, box-shadow 0.15s', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.boxShadow = '0 4px 16px rgba(61,35,20,0.08)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}>
+                    <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>{a.icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--night)', marginBottom: '0.15rem' }}>{a.label}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{a.sub}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Traveller-only sections — guides skip straight to guide dashboard */}
+      {(!user || profile?.role !== 'guide') && <>
+
+      {/* ── CITY SAFETY SCORES TEASER ─────────────────────────────── */}      <section style={{ padding: '3.5rem 0', background: 'white', borderBottom: '1px solid var(--border)' }}>
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem', flexWrap: 'wrap', gap: '0.8rem' }}>
             <div>
@@ -485,6 +524,8 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      </> /* end traveller-only sections */}
 
       {/* ── STICKY MOBILE CTA BAR ─────────────────────────────────── */}
       {!user && (
