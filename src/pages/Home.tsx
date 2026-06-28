@@ -161,25 +161,42 @@ export default function Home() {
             className="hero-grid">
             <style>{`.hero-grid { grid-template-columns: 1fr !important; } @media(min-width:900px){ .hero-grid { grid-template-columns: minmax(0,1fr) minmax(0,440px) !important; } }`}</style>
 
-            {/* Left — copy */}
+            {/* Left — copy: guide hero OR traveller hero */}
             <div>
-              {/* Urgency badge */}
-              <div className="cro-urgency">
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--rose)', display: 'inline-block' }} />
-                47 women joined SafeShe this week
-              </div>
-
-              <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(2.2rem,5.5vw,3.8rem)', fontWeight: 900, color: 'var(--night)', lineHeight: 1.1, marginBottom: '1.2rem' }}>
-                Solo travel in India<br />
-                <em style={{ color: 'var(--rose)' }}>without the fear.</em>
-              </h1>
-
-              <p style={{ fontSize: 'clamp(0.95rem,2vw,1.1rem)', color: 'var(--earth)', lineHeight: 1.75, marginBottom: '0.8rem', maxWidth: 480 }}>
-                SafeShe connects you with <strong style={{ color: 'var(--rose)' }}>Aadhaar-verified women guides</strong>, safe hostels, real-time safety scores, and a one-tap SOS — so you explore confidently.
-              </p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '2.2rem' }}>
-                Free to join. Trusted by 12,400+ women across India.
-              </p>
+              {user && profile?.role === 'guide' ? (
+                <>
+                  {/* ── GUIDE HERO ── */}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(122,158,126,0.1)', border: '1.5px solid rgba(122,158,126,0.25)', borderRadius: 20, padding: '0.3rem 0.9rem', marginBottom: '1.2rem', fontSize: '0.78rem', fontWeight: 700, color: 'var(--sage)' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sage)', display: 'inline-block' }} />
+                    You are live on SafeShe
+                  </div>
+                  <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(2rem,5vw,3.2rem)', fontWeight: 900, color: 'var(--night)', lineHeight: 1.15, marginBottom: '1rem' }}>
+                    Your guide profile<br />
+                    <em style={{ color: 'var(--rose)' }}>is live and ready.</em>
+                  </h1>
+                  <p style={{ fontSize: 'clamp(0.92rem,2vw,1.05rem)', color: 'var(--earth)', lineHeight: 1.75, marginBottom: '2rem', maxWidth: 460 }}>
+                    Manage your bookings, update your availability, complete Aadhaar KYC to get verified, and start earning from women travellers across India.
+                  </p>
+                </>
+              ) : (
+                <>
+                  {/* ── TRAVELLER HERO ── */}
+                  <div className="cro-urgency">
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--rose)', display: 'inline-block' }} />
+                    47 women joined SafeShe this week
+                  </div>
+                  <h1 style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(2.2rem,5.5vw,3.8rem)', fontWeight: 900, color: 'var(--night)', lineHeight: 1.1, marginBottom: '1.2rem' }}>
+                    Solo travel in India<br />
+                    <em style={{ color: 'var(--rose)' }}>without the fear.</em>
+                  </h1>
+                  <p style={{ fontSize: 'clamp(0.95rem,2vw,1.1rem)', color: 'var(--earth)', lineHeight: 1.75, marginBottom: '0.8rem', maxWidth: 480 }}>
+                    SafeShe connects you with <strong style={{ color: 'var(--rose)' }}>Aadhaar-verified women guides</strong>, safe hostels, real-time safety scores, and a one-tap SOS — so you explore confidently.
+                  </p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '2.2rem' }}>
+                    Free to join. Trusted by 12,400+ women across India.
+                  </p>
+                </>
+              )}
 
               {/* CTAs */}
               {user ? (
@@ -228,69 +245,108 @@ export default function Home() {
                 </>
               )}
 
-              {/* Trust signals */}
-              <div className="cro-trust-row">
-                {['Aadhaar-verified guides', '24/7 SOS support', 'Women-only spaces', 'No spam ever'].map(t => (
-                  <div key={t} className="cro-trust-item">
-                    <CheckCircle size={13} color="var(--rose)" /> {t}
-                  </div>
-                ))}
-              </div>
+              {/* Trust signals — travellers only */}
+              {(!user || profile?.role !== 'guide') && (
+                <div className="cro-trust-row">
+                  {['Aadhaar-verified guides', '24/7 SOS support', 'Women-only spaces', 'No spam ever'].map(t => (
+                    <div key={t} className="cro-trust-item">
+                      <CheckCircle size={13} color="var(--rose)" /> {t}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {/* Stats bar */}
-              <div className="cro-stat-bar">
-                {STATS.map(s => (
-                  <div key={s.label} className="cro-stat-item">
-                    <div className="cro-stat-val">{s.value}</div>
-                    <div className="cro-stat-lbl">{s.label}</div>
-                  </div>
-                ))}
-              </div>
+              {/* Stats bar — travellers only */}
+              {(!user || profile?.role !== 'guide') && (
+                <div className="cro-stat-bar">
+                  {STATS.map(s => (
+                    <div key={s.label} className="cro-stat-item">
+                      <div className="cro-stat-val">{s.value}</div>
+                      <div className="cro-stat-lbl">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Right — social proof card (desktop only) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              {/* Live activity feed */}
-              <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.1rem 1.3rem', boxShadow: '0 2px 16px rgba(61,35,20,0.07)' }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.8rem' }}>🟢 Live activity</p>
-                {[
-                  { text: 'Priya booked a guide in Goa', time: '2m ago' },
-                  { text: 'New safety tips added for Delhi', time: '15m ago' },
-                  { text: 'Meera completed her Jaipur trip safely', time: '1h ago' },
-                  { text: 'SOS test — response in 78 seconds', time: '3h ago' },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--earth)' }}>{item.text}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', flexShrink: 0, marginLeft: '0.8rem' }}>{item.time}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Mini testimonial */}
-              <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.2rem 1.3rem', boxShadow: '0 2px 16px rgba(61,35,20,0.07)' }}>
-                <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.7rem' }}>
-                  {[1,2,3,4,5].map(s => <Star key={s} size={13} fill="#FFB800" color="#FFB800" />)}
+            {/* Right column — guide cards OR traveller social proof */}
+            {user && profile?.role === 'guide' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                {/* Guide stat cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {[
+                    { icon: '💰', label: 'Earnings', value: '₹0', sub: 'Lifetime total' },
+                    { icon: '📅', label: 'Trips done', value: '0', sub: 'Completed' },
+                    { icon: '⭐', label: 'Rating', value: '—', sub: 'Avg from reviews' },
+                    { icon: '🟢', label: 'Status', value: 'Live', sub: 'Profile active' },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: '0 2px 12px rgba(61,35,20,0.06)' }}>
+                      <div style={{ fontSize: '1.3rem', marginBottom: '0.4rem' }}>{s.icon}</div>
+                      <div style={{ fontWeight: 900, fontSize: '1.3rem', color: 'var(--night)', lineHeight: 1 }}>{s.value}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.2rem' }}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--earth)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '0.8rem' }}>
-                  "First solo trip to Delhi. My guide was with me from airport to hotel. Felt completely safe the whole time."
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,var(--rose),var(--sand))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'white' }}>SR</div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--night)' }}>Sneha R.</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>Delhi trip · Verified booking</div>
+                {/* KYC prompt */}
+                <Link to="/guide-dashboard?tab=kyc" style={{ textDecoration: 'none' }}>
+                  <div style={{ background: 'var(--blush)', border: '1.5px solid rgba(232,68,90,0.2)', borderRadius: 14, padding: '1rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>🪪</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--rose)', marginBottom: '0.15rem' }}>Complete Aadhaar KYC</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted)', lineHeight: 1.4 }}>Get verified badge and unlock all bookings</div>
+                    </div>
+                    <ChevronRight size={16} color="var(--rose)" style={{ marginLeft: 'auto', flexShrink: 0 }} />
                   </div>
+                </Link>
+                {/* Tip */}
+                <div style={{ background: 'rgba(122,158,126,0.08)', border: '1.5px solid rgba(122,158,126,0.2)', borderRadius: 14, padding: '1rem 1.2rem' }}>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--earth)', lineHeight: 1.6, margin: 0 }}>
+                    💡 <strong>Tip:</strong> Set your hourly rate and add your specialties in your profile — guides with complete profiles get 3× more bookings.
+                  </p>
                 </div>
               </div>
-
-              {/* Guide availability indicator */}
-              <div style={{ background: 'rgba(122,158,126,0.08)', border: '1.5px solid rgba(122,158,126,0.3)', borderRadius: 16, padding: '1rem 1.3rem', boxShadow: '0 2px 12px rgba(122,158,126,0.1)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--sage)', flexShrink: 0, boxShadow: '0 0 0 3px rgba(122,158,126,0.25)', animation: 'pulse-soft 2s infinite' }} />
-                <span style={{ fontSize: '0.83rem', color: 'var(--earth)' }}>
-                  <strong style={{ color: 'var(--sage)' }}>6 verified guides</strong> available to book right now
-                </span>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                {/* Live activity feed */}
+                <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.1rem 1.3rem', boxShadow: '0 2px 16px rgba(61,35,20,0.07)' }}>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.8rem' }}>🟢 Live activity</p>
+                  {[
+                    { text: 'Priya booked a guide in Goa', time: '2m ago' },
+                    { text: 'New safety tips added for Delhi', time: '15m ago' },
+                    { text: 'Meera completed her Jaipur trip safely', time: '1h ago' },
+                    { text: 'SOS test — response in 78 seconds', time: '3h ago' },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--earth)' }}>{item.text}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--muted)', flexShrink: 0, marginLeft: '0.8rem' }}>{item.time}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Mini testimonial */}
+                <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '1.2rem 1.3rem', boxShadow: '0 2px 16px rgba(61,35,20,0.07)' }}>
+                  <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.7rem' }}>
+                    {[1,2,3,4,5].map(s => <Star key={s} size={13} fill="#FFB800" color="#FFB800" />)}
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--earth)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '0.8rem' }}>
+                    "First solo trip to Delhi. My guide was with me from airport to hotel. Felt completely safe the whole time."
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,var(--rose),var(--sand))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'white' }}>SR</div>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--night)' }}>Sneha R.</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>Delhi trip · Verified booking</div>
+                    </div>
+                  </div>
+                </div>
+                {/* Guide availability */}
+                <div style={{ background: 'rgba(122,158,126,0.08)', border: '1.5px solid rgba(122,158,126,0.3)', borderRadius: 16, padding: '1rem 1.3rem', boxShadow: '0 2px 12px rgba(122,158,126,0.1)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--sage)', flexShrink: 0, boxShadow: '0 0 0 3px rgba(122,158,126,0.25)', animation: 'pulse-soft 2s infinite' }} />
+                  <span style={{ fontSize: '0.83rem', color: 'var(--earth)' }}>
+                    <strong style={{ color: 'var(--sage)' }}>6 verified guides</strong> available to book right now
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

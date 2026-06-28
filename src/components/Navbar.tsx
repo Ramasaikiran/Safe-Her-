@@ -1,13 +1,17 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Shield, Home, Search, BedDouble, LayoutDashboard, LogOut, AlertTriangle, ShieldCheck } from 'lucide-react'
+import {
+  Shield, Home, Search, BedDouble, LayoutDashboard, LogOut,
+  AlertTriangle, ShieldCheck, Compass, Star, TrendingUp, User
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const dashboardPath = profile?.role === 'guide' ? '/guide-dashboard' : '/dashboard'
+  const isGuide = profile?.role === 'guide'
+  const dashboardPath = isGuide ? '/guide-dashboard' : '/dashboard'
 
   const handleSignOut = async () => {
     await signOut()
@@ -15,19 +19,55 @@ export default function Navbar() {
     navigate('/')
   }
 
-  const active = (path: string) => pathname === path
+  const active = (path: string) => pathname === path || pathname.startsWith(path + '/')
 
-  // Simple nav links — plain words, no jargon
-  const navLinks = [
-    { to: '/guides',  label: 'Find a Guide',  icon: <Search size={17} /> },
-    { to: '/hostels', label: 'Safe Stays',     icon: <BedDouble size={17} /> },
-    { to: '/safety',  label: 'Safety',         icon: <ShieldCheck size={17} /> },
-    { to: '/sos',     label: 'SOS',            icon: <AlertTriangle size={17} />, danger: true },
+  // ── Traveller nav links
+  const travellerLinks = [
+    { to: '/guides',  label: 'Find a Guide', icon: <Search size={17} /> },
+    { to: '/hostels', label: 'Safe Stays',   icon: <BedDouble size={17} /> },
+    { to: '/safety',  label: 'Safety',       icon: <ShieldCheck size={17} /> },
+    { to: '/sos',     label: 'SOS',          icon: <AlertTriangle size={17} />, danger: true },
   ]
+
+  // ── Guide nav links — no traveller options
+  const guideLinks = [
+    { to: '/guide-dashboard',            label: 'Dashboard', icon: <TrendingUp size={17} /> },
+    { to: '/guide-dashboard?tab=trips',  label: 'Trips',     icon: <Compass size={17} /> },
+    { to: '/guide-dashboard?tab=profile',label: 'Profile',   icon: <User size={17} /> },
+    { to: '/sos',                        label: 'SOS',       icon: <AlertTriangle size={17} />, danger: true },
+  ]
+
+  const navLinks = isGuide ? guideLinks : travellerLinks
+
+  // ── Mobile bottom tabs
+  const travellerTabs = [
+    { to: '/',        label: 'Home',   icon: <Home size={20} /> },
+    { to: '/guides',  label: 'Guides', icon: <Search size={20} /> },
+    { to: '/safety',  label: 'Safety', icon: <ShieldCheck size={20} /> },
+    { to: '/sos',     label: 'SOS',    icon: <AlertTriangle size={20} />, danger: true },
+    { to: '/hostels', label: 'Stays',  icon: <BedDouble size={20} /> },
+    { to: user ? '/dashboard' : '/login', label: user ? 'Me' : 'Sign In', icon: <LayoutDashboard size={20} /> },
+  ]
+
+  const guideTabs = [
+    { to: '/',               label: 'Home',    icon: <Home size={20} /> },
+    { to: '/guide-dashboard',label: 'Dashboard',icon: <TrendingUp size={20} /> },
+    { to: '/guide-dashboard?tab=trips',   label: 'Trips',   icon: <Compass size={20} /> },
+    { to: '/sos',            label: 'SOS',     icon: <AlertTriangle size={20} />, danger: true },
+    { to: '/guide-dashboard?tab=profile', label: 'Profile', icon: <User size={20} /> },
+    { to: '/guide-dashboard?tab=kyc',     label: 'KYC',     icon: <ShieldCheck size={20} /> },
+  ]
+
+  const mobileTabs = isGuide ? guideTabs : travellerTabs
+
+  const isActiveTab = (to: string) => {
+    const path = to.split('?')[0]
+    return pathname === path || (path !== '/' && pathname.startsWith(path + '/'))
+  }
 
   return (
     <>
-      {/* ── DESKTOP TOP NAV ── */}
+      {/* ── DESKTOP TOP NAV ──────────────────────────────────────── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
         background: 'rgba(251,247,244,0.97)', backdropFilter: 'blur(12px)',
@@ -42,6 +82,11 @@ export default function Navbar() {
             <span style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.45rem', fontWeight: 900, color: 'var(--rose)' }}>
               Safe<span style={{ color: 'var(--earth)' }}>She</span>
             </span>
+            {isGuide && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(122,158,126,0.15)', color: 'var(--sage)', padding: '0.15rem 0.5rem', borderRadius: 20, marginLeft: '0.3rem', letterSpacing: '0.04em' }}>
+                GUIDE
+              </span>
+            )}
           </Link>
 
           {/* Centre links */}
@@ -55,7 +100,9 @@ export default function Navbar() {
                   background: l.danger
                     ? active(l.to) ? 'var(--rose)' : 'var(--blush)'
                     : active(l.to) ? 'var(--blush)' : 'transparent',
-                  color: l.danger ? active(l.to) ? 'white' : 'var(--rose)' : active(l.to) ? 'var(--rose)' : 'var(--earth)',
+                  color: l.danger
+                    ? active(l.to) ? 'white' : 'var(--rose)'
+                    : active(l.to) ? 'var(--rose)' : 'var(--earth)',
                   transition: 'all 0.2s',
                 }}>
                   {l.icon} {l.label}
@@ -64,7 +111,7 @@ export default function Navbar() {
             ))}
           </ul>
 
-          {/* Right — auth actions */}
+          {/* Right */}
           <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'center' }} className="desktop-only">
             {user ? (
               <>
@@ -76,7 +123,7 @@ export default function Navbar() {
                   fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
                   border: '1.5px solid var(--border)',
                 }}>
-                  <LayoutDashboard size={15} /> My Dashboard
+                  <LayoutDashboard size={15} /> {isGuide ? 'Guide Dashboard' : 'My Dashboard'}
                 </Link>
                 <button onClick={handleSignOut} style={{
                   display: 'flex', alignItems: 'center', gap: '0.35rem',
@@ -104,7 +151,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* ── MOBILE BOTTOM TAB BAR ── */}
+      {/* ── MOBILE BOTTOM TAB BAR ────────────────────────────────── */}
       <nav className="mobile-only" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
         background: 'white', borderTop: '1px solid rgba(196,154,114,0.18)',
@@ -112,24 +159,19 @@ export default function Navbar() {
         boxShadow: '0 -4px 24px rgba(61,35,20,0.08)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
-        {[
-          { to: '/',          label: 'Home',      icon: <Home size={20} /> },
-          { to: '/guides',    label: 'Guides',    icon: <Search size={20} /> },
-          { to: '/safety',    label: 'Safety',    icon: <ShieldCheck size={20} /> },
-          { to: '/sos',       label: 'SOS',       icon: <AlertTriangle size={20} />, danger: true },
-          { to: '/hostels',   label: 'Stays',     icon: <BedDouble size={20} /> },
-          { to: user ? dashboardPath : '/login', label: user ? 'Me' : 'Sign In', icon: <LayoutDashboard size={20} /> },
-        ].map(t => (
-          <Link key={t.to} to={t.to} style={{
+        {mobileTabs.map(t => (
+          <Link key={t.to + t.label} to={t.to} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', gap: '0.25rem', padding: '0.6rem 0.2rem',
+            justifyContent: 'center', gap: '0.25rem', padding: '0.6rem 0.15rem',
             textDecoration: 'none',
-            background: t.danger ? active(t.to) ? 'var(--rose)' : 'transparent' : 'transparent',
-            color: t.danger ? active(t.to) ? 'white' : 'var(--rose)' : active(t.to) ? 'var(--rose)' : 'var(--muted)',
-            borderTop: active(t.to) && !t.danger ? '2px solid var(--rose)' : '2px solid transparent',
+            background: (t as any).danger ? isActiveTab(t.to) ? 'var(--rose)' : 'transparent' : 'transparent',
+            color: (t as any).danger
+              ? isActiveTab(t.to) ? 'white' : 'var(--rose)'
+              : isActiveTab(t.to) ? 'var(--rose)' : 'var(--muted)',
+            borderTop: isActiveTab(t.to) && !(t as any).danger ? '2px solid var(--rose)' : '2px solid transparent',
           }}>
             {t.icon}
-            <span style={{ fontSize: '0.65rem', fontWeight: 600 }}>{t.label}</span>
+            <span style={{ fontSize: '0.6rem', fontWeight: 600 }}>{t.label}</span>
           </Link>
         ))}
       </nav>
