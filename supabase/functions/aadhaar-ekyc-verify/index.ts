@@ -90,6 +90,18 @@ Deno.serve(async (req: Request) => {
 
     const verifiedName: string | undefined = providerData?.data?.full_name;
     const photoBase64: string | undefined = providerData?.data?.profile_image;
+    const gender: string | undefined = providerData?.data?.gender; // 'F' or 'M'
+
+    // ── Gender check — SafeShe guides must be women ──────────
+    if (gender && gender.toUpperCase() !== 'F') {
+      await userClient.from('guide_profiles').update({ kyc_status: 'failed' }).eq('id', user.id);
+      return new Response(JSON.stringify({
+        error: 'SafeShe guides must identify as female. This Aadhaar does not match our eligibility criteria.',
+        gender_mismatch: true,
+      }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     // ─────────────────────────────────────────────────────────
 
     let photoUrl: string | null = null;

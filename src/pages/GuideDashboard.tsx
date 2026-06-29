@@ -214,7 +214,14 @@ export default function GuideDashboard() {
     setKycLoading(true)
     const { data, error } = await supabase.functions.invoke('aadhaar-ekyc-verify', { body: { otp: kycOtp, reference_id: kycReferenceId } })
     setKycLoading(false)
-    if (error || !data?.ok) { toast.error(data?.error || 'Verification failed. Please try again.'); return }
+    if (error || !data?.ok) {
+      if (data?.gender_mismatch) {
+        toast.error('SafeShe is a women-only platform. This Aadhaar is not eligible for guide registration.', { duration: 6000 })
+      } else {
+        toast.error(data?.error || 'Verification failed. Please try again.')
+      }
+      return
+    }
     toast.success(`Aadhaar verified${data.verified_name ? ` as ${data.verified_name}` : ''} ✓`)
     setKycStep('input'); setAadhaarInput(''); setKycOtp('')
     loadData()
