@@ -6,7 +6,7 @@ import {
   Compass, Star, Briefcase, IndianRupee, LogOut, Phone, Calendar,
   CheckCircle2, Clock, MapPin, ShieldCheck, AlertTriangle, Loader2,
   Eye, EyeOff, TrendingUp, User, Settings, ToggleLeft, ToggleRight,
-  ChevronDown, ChevronUp, Wallet, Bell, Check, X
+  ChevronDown, ChevronUp, Wallet, Bell, Check, X, Share2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -463,6 +463,29 @@ export default function GuideDashboard() {
                 </div>
               </button>
             )}
+
+            {/* Share profile link */}
+            <div style={{ background: 'rgba(122,158,126,0.08)', border: '1.5px solid rgba(122,158,126,0.2)', borderRadius: 14, padding: '1rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.2rem', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--night)', marginBottom: '0.15rem' }}>Share your guide profile</div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {`${window.location.origin}/guides/${user?.id}`}
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const url = `${window.location.origin}/guides/${user?.id}`
+                  if (navigator.share) {
+                    await navigator.share({ title: `${profile?.full_name} — SafeShe Guide`, text: 'Book me as your SafeShe guide', url })
+                  } else {
+                    await navigator.clipboard.writeText(url)
+                    toast.success('Profile link copied!')
+                  }
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--sage)', color: 'white', border: 'none', borderRadius: 10, padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', flexShrink: 0 }}>
+                <Share2 size={13} /> Share
+              </button>
+            </div>
 
             {/* Recent trips preview */}
             {trips.length > 0 && (

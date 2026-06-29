@@ -43,6 +43,7 @@ export async function payBookingWithUpi(opts: {
   prefillEmail?: string
   prefillContact?: string
   onDismiss: () => void
+  onSuccess?: () => void
 }): Promise<void> {
   const { data: sessionData } = await supabase.auth.getSession()
   const accessToken = sessionData.session?.access_token
@@ -67,11 +68,10 @@ export async function payBookingWithUpi(opts: {
     prefill: { email: opts.prefillEmail, contact: opts.prefillContact },
     method: { upi: true, card: false, netbanking: false, wallet: false, emi: false, paylater: false },
     theme: { color: '#E8445A' },
-    handler: () => {
-      // Razorpay reported success client-side. This is NOT the source
-      // of truth -- we navigate to the status page and let it poll the
-      // booking row, which only the webhook updates.
-      window.location.href = `/payment-status/${opts.bookingId}`
+    handler: async () => {
+      // Razorpay reported success — send confirmation email then navigate
+      if (opts.onSuccess) await opts.onSuccess()
+      else window.location.href = `/payment-status/${opts.bookingId}`
     },
     modal: { ondismiss: opts.onDismiss },
   })

@@ -66,6 +66,24 @@ export default function BookGuide() {
           toast('Payment cancelled. Your booking is saved as pending — pay anytime from your dashboard.', { icon: '⏳' })
           navigate('/dashboard')
         },
+        onSuccess: async () => {
+          // Send confirmation email
+          if (profile?.email) {
+            await supabase.functions.invoke('notify-booking', {
+              body: {
+                to: profile.email,
+                name: profile.full_name || 'Traveller',
+                type: 'guide',
+                itemName: guide.name,
+                date: new Date(form.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+                hours: form.hours,
+                amount: guide.price_per_hour * form.hours,
+                bookingId: inserted.id,
+              }
+            })
+          }
+          navigate(`/payment-status/${inserted.id}`)
+        },
       })
     } catch (err) {
       setLoading(false)

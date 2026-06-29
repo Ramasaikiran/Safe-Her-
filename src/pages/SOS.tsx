@@ -1,14 +1,35 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { Shield, Phone, AlertTriangle, MapPin } from 'lucide-react'
+import { Shield, Phone, AlertTriangle, MapPin, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { requestPushPermission, savePushSubscription, sendLocalSOSNotification } from '../lib/pushNotifications'
 
 export default function SOS() {
   const { user, profile } = useAuth()
   const [activated, setActivated] = useState(false)
   const [countdown, setCountdown] = useState(3)
+  const [pushEnabled, setPushEnabled] = useState(false)
 
-  const handleSOS = () => {
+  // Register service worker + check push status
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error)
+    }
+    setPushEnabled(Notification.permission === 'granted')
+  }, [])
+
+  const handleEnablePush = async () => {
+    const sub = await requestPushPermission()
+    if (sub && user) {
+      await savePushSubscription(user.id, sub)
+      setPushEnabled(true)
+      toast.success('SOS push alerts enabled on this device.')
+    } else {
+      toast.error('Could not enable notifications. Check your browser settings.')
+    }
+  }
+
+  const handleSOS = async () => {
     let c = 3
     const interval = setInterval(() => {
       c--
@@ -17,6 +38,8 @@ export default function SOS() {
         clearInterval(interval)
         setActivated(true)
         toast.error('🚨 SOS Activated! Help is on the way.', { duration: 5000, style: { background: 'var(--rose)', color: 'white' } })
+        // Fire push notification so family/contacts get alerted even if app is backgrounded
+        sendLocalSOSNotification('SOS activated on SafeShe. Your location is being shared.')
       } else {
         setCountdown(c)
       }
@@ -35,6 +58,19 @@ export default function SOS() {
             <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '3rem', lineHeight: 1.6 }}>
               Press and hold the SOS button to alert the SafeShe emergency team and nearest local police station.
             </p>
+
+            {/* Push notification enable */}
+            {!pushEnabled && (
+              <button onClick={handleEnablePush}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 50, padding: '0.6rem 1.2rem', color: 'white', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginBottom: '0.5rem' }}>
+                <Bell size={14} /> Enable SOS push alerts
+              </button>
+            )}
+            {pushEnabled && (
+              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem' }}>
+                <Bell size={12} /> Push alerts active on this device
+              </p>
+            )}
 
             {/* Big SOS Button */}
             <button

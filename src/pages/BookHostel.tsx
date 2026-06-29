@@ -69,6 +69,24 @@ export default function BookHostel() {
           toast('Payment cancelled. Your booking is saved as pending — pay anytime from your dashboard.', { icon: '⏳' })
           navigate('/dashboard')
         },
+        onSuccess: async () => {
+          if (profile?.email) {
+            await supabase.functions.invoke('notify-booking', {
+              body: {
+                to: profile.email,
+                name: profile.full_name || 'Traveller',
+                type: 'hostel',
+                itemName: hostel.name,
+                checkIn: new Date(form.checkIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+                checkOut: new Date(form.checkOut).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+                nights,
+                amount: hostel.price_per_night * nights,
+                bookingId: inserted.id,
+              }
+            })
+          }
+          navigate(`/payment-status/${inserted.id}`)
+        },
       })
     } catch (err) {
       setLoading(false)
